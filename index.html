@@ -186,6 +186,18 @@
     <form id="uploadForm" class="dlg-body" method="dialog">
       <div class="row"><label for="appName">Nama Game</label><input id="appName" type="text" required placeholder="Contoh: Super Football 23"/></div>
       <div class="row"><label for="apkFile">File Game (APK/ZIP)</label><input id="apkFile" type="file" accept=".apk,.zip,application/vnd.android.package-archive,application/zip" required/></div>
+      <div class="row">
+  <label for="iconFile">Icon APK</label>
+  <input id="iconFile" type="file" accept="image/*" required/>
+</div>
+
+<div id="uploadProgress" style="display:none;margin-top:10px">
+  <progress id="progressBar" value="0" max="100" style="width:100%"></progress>
+</div>
+
+<div id="uploadSuccess" style="display:none;color:green;font-weight:bold;margin-top:10px">
+  Sukses!!
+</div>
       <div class="row"><label for="category">Kategori</label>
         <select id="category" required>
           <option value="">Pilih kategori…</option>
@@ -429,69 +441,4 @@
       if(!USE_SIGNED_URLS) return publicUrl;
       // Jika pakai signed
       const { data, error } = await supabase.storage.from('apks').createSignedUrl(g.apk_path, 60*60); // 1 jam
-      return error ? publicUrl : data.signedUrl;
-    }
-
-    async function renderGames(list){
-      if(!list || list.length===0){
-        grid.innerHTML = '';
-        emptyState.style.display = 'block';
-        return;
-      }
-      emptyState.style.display = 'none';
-      // Build HTML dengan resolving URL (signed/public)
-      const parts = [];
-      for(const g of list){
-        const url = await resolveDownloadUrl(g);
-        parts.push(gameCardTemplate(g, ()=>url));
-      }
-      grid.innerHTML = parts.join('');
-    }
-
-    async function loadGames(){
-      const all = await fetchGames();
-      window.__ALL_GAMES__ = all;
-      await applyFilterAndSearch();
-    }
-
-    // ====== SEARCH & FILTER ======
-    const searchInput = document.getElementById('searchInput');
-    const searchBtn = document.getElementById('searchBtn');
-    const pills = Array.from(document.querySelectorAll('.pill'));
-    let activeCat = 'all';
-
-    function filterData(){
-      const q = (searchInput.value||'').toLowerCase().trim();
-      const src = window.__ALL_GAMES__ || [];
-      return src.filter(g=>{
-        const okCat = activeCat==='all' || (g.category||'').toLowerCase()===activeCat.toLowerCase();
-        const txt = `${g.title||''} ${g.category||''} ${g.description||''}`.toLowerCase();
-        const okSearch = !q || txt.includes(q);
-        return okCat && okSearch;
-      });
-    }
-
-    async function applyFilterAndSearch(){
-      const filtered = filterData();
-      await renderGames(filtered);
-    }
-
-    searchBtn.addEventListener('click', applyFilterAndSearch);
-    searchInput.addEventListener('input', applyFilterAndSearch);
-    pills.forEach(p=>{
-      p.addEventListener('click', ()=>{
-        pills.forEach(x=>x.classList.remove('active'));
-        p.classList.add('active');
-        activeCat = p.dataset.cat;
-        applyFilterAndSearch();
-      });
-    });
-
-    // ====== INISIALISASI ======
-    (async function init(){
-      // onAuthStateChange akan menangani sesi awal secara otomatis
-      await loadGames();
-    })();
-  </script>
-</body>
-</html>
+      re
