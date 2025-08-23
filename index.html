@@ -125,6 +125,7 @@
   <div id="backdrop" class="backdrop"></div>
   <aside id="drawer" class="drawer" aria-hidden="true" aria-label="Main menu">
     <div class="panel">
+      <button id="closeDrawerBtn" class="btn-pill btn-ghost" style="position:absolute;top:28px;right:28px;padding:4px 10px;font-size:14px">Close</button>
       <div class="brand">
         <img src="icon.png" alt="JBF logo"/>
         <div>
@@ -211,13 +212,14 @@
     // ====== KONFIGURASI SUPABASE ======
     const SUPABASE_URL = "https://wpoatnvzlvgrpqlkgixp.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indwb2F0bnZ6bHZncnBxbGtnaXhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU4NDM1ODEsImV4cCI6MjA3MTQxOTU4MX0.VoJqq_M0jcdn5rkaL2lzbmf07ohnlzwNyC8mLmqb_4E";
-    const USE_SIGNED_URLS = false; // true = link download pakai signed URL (kedaluwarsa)
+    const USE_SIGNED_URLS = true; // true = link download pakai signed URL (kedaluwarsa)
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     // ====== UI ELEMENTS ======
     const drawer = document.getElementById('drawer');
     const backdrop = document.getElementById('backdrop');
     const openDrawerBtn = document.getElementById('openDrawer');
+    const closeDrawerBtn = document.getElementById('closeDrawerBtn');
     const btnUpload = document.getElementById('btnUpload');
     const btnLogin = document.getElementById('btnLogin');
     const loginText = document.getElementById('loginText');
@@ -231,6 +233,7 @@
     function openDrawer(){ drawer.classList.add('show'); backdrop.classList.add('show'); drawer.setAttribute('aria-hidden','false'); }
     function closeDrawer(){ drawer.classList.remove('show'); backdrop.classList.remove('show'); drawer.setAttribute('aria-hidden','true'); }
     openDrawerBtn.addEventListener('click', openDrawer);
+    closeDrawerBtn.addEventListener('click', closeDrawer);
     backdrop.addEventListener('click', closeDrawer);
     document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') { closeDrawer(); loginDlg.close(); uploadDlg.close(); } });
 
@@ -405,7 +408,7 @@
     }
 
     function gameCardTemplate(g, urlResolver){
-      const thumb = g.img_url || './images/placeholder.jpg';
+      const thumb = g.img_url || 'game.png';
       const rating = g.rating ? `⭐ ${Number(g.rating).toFixed(1)} • ` : '';
       const resolvedUrl = urlResolver(g);
       return `
