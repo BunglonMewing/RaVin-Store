@@ -114,6 +114,7 @@
       <button class="pill" data-cat="Simulation">Simulation</button>
       <button class="pill" data-cat="Casual">Casual</button>
       <button class="pill" data-cat="Racing">Racing</button>
+      <button class="pill" data-cat="Max2D">Max2D</button>
     </div>
 
     <div id="gameGrid" class="grid" aria-live="polite"></div>
@@ -182,13 +183,14 @@
       <button class="btn-pill btn-ghost" onclick="uploadDlg.close()">Close</button>
     </div>
     <form id="uploadForm" class="dlg-body" method="dialog">
-      <div class="row"><label for="appName">Nama APK</label><input id="appName" type="text" required placeholder="Contoh: Super Football 23"/></div>
-      <div class="row"><label for="apkFile">File APK</label><input id="apkFile" type="file" accept=".apk,application/vnd.android.package-archive" required/></div>
+      <div class="row"><label for="appName">Nama Game</label><input id="appName" type="text" required placeholder="Contoh: Super Football 23"/></div>
+      <div class="row"><label for="apkFile">File Game (APK/ZIP)</label><input id="apkFile" type="file" accept=".apk,.zip,application/vnd.android.package-archive,application/zip" required/></div>
       <div class="row"><label for="category">Kategori</label>
         <select id="category" required>
           <option value="">Pilih kategori…</option>
           <option>Sports</option><option>Action</option><option>Strategy</option>
           <option>Simulation</option><option>Casual</option><option>Racing</option>
+          <option>Max2D</option>
         </select>
       </div>
       <div class="row"><label for="desc">Deskripsi</label><textarea id="desc" rows="4" placeholder="Tulis deskripsi singkat game…"></textarea></div>
@@ -278,12 +280,18 @@
 
         if (error && error.message.includes('Invalid login credentials')) {
           // Jika login gagal, coba sign up (register)
-          const { error: signUpErr } = await supabase.auth.signUp({ email, password: pwd });
+          const { error: signUpErr } = await supabase.auth.signUp({
+            email,
+            password: pwd,
+            options: {
+              emailRedirectTo: window.location.origin,
+            },
+          });
           if (signUpErr) {
             alert('Login/Register gagal: ' + signUpErr.message);
           } else {
-            alert('Registrasi berhasil. Anda sudah login.');
-            // onAuthStateChange akan menangani pembaruan UI & menutup dialog
+            alert('Registrasi berhasil. Cek email Anda untuk verifikasi.');
+            loginDlg.close();
           }
         } else if (error) {
           alert('Login/Register gagal: ' + error.message);
@@ -325,28 +333,31 @@
         const desc = document.getElementById('desc').value.trim();
         const version = document.getElementById('version').value.trim();
         const sizeText = document.getElementById('size').value.trim();
-        const apkFile = document.getElementById('apkFile').files[0];
+        const gameFile = document.getElementById('apkFile').files[0];
 
-        if (!apkFile) {
-          alert('Pilih file APK.');
+        if (!gameFile) {
+          alert('Pilih file game.');
           return;
         }
-        if (!apkFile.name.toLowerCase().endsWith('.apk')) {
-          alert('File harus berekstensi .apk');
+        const fileName = gameFile.name.toLowerCase();
+        if (!fileName.endsWith('.apk') && !fileName.endsWith('.zip')) {
+          alert('File harus berekstensi .apk atau .zip');
           return;
         }
-        if (apkFile.size > 1024 * 1024 * 1024) { // 1GB
+        if (gameFile.size > 1024 * 1024 * 1024) { // 1GB
           alert('Ukuran file maksimal adalah 1GB.');
           return;
         }
 
+        const fileExt = fileName.split('.').pop();
         const fileId = crypto.randomUUID();
-        const path = `${currentUser.id}/${fileId}.apk`;
+        const path = `${currentUser.id}/${fileId}.${fileExt}`;
+        const contentType = fileExt === 'apk' ? 'application/vnd.android.package-archive' : 'application/zip';
 
         const { error: upErr } = await supabase.storage
           .from('apks')
-          .upload(path, apkFile, {
-            contentType: 'application/vnd.android.package-archive',
+          .upload(path, gameFile, {
+            contentType,
             upsert: false
           });
 
@@ -361,7 +372,7 @@
             category: category,
             description: desc,
             version: version || null,
-            size: sizeText || Math.round(apkFile.size / 1024 / 1024) + ' MB',
+            size: sizeText || Math.round(gameFile.size / 1024 / 1024) + ' MB',
             apk_path: path,
             uploaded_by: currentUser.id
           });
