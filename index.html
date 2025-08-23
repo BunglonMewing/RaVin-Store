@@ -232,110 +232,153 @@
 
     // ====== AUTH ======
     let currentUser = null;
-    async function loadSession(){
-      const { data: { user } } = await supabase.auth.getUser();
+
+    function renderLoginState(user) {
       currentUser = user;
-      renderLoginState();
-    }
-    function renderLoginState(){
-      if(currentUser){
-        loginStateEl.textContent = `Logged in as ${currentUser.email}`;
+      if (user) {
+        loginStateEl.textContent = `Logged in as ${user.email}`;
         loginText.textContent = 'Account';
         btnLogin.onclick = async () => {
-          if(confirm('Logout dari akun ini?')){ await supabase.auth.signOut(); currentUser = null; renderLoginState(); }
+          if (confirm('Logout dari akun ini?')) {
+            await supabase.auth.signOut();
+          }
         };
       } else {
         loginStateEl.textContent = 'Not logged in';
         loginText.textContent = 'Login';
-        btnLogin.onclick = ()=> loginDlg.showModal();
+        btnLogin.onclick = () => loginDlg.showModal();
       }
     }
-    loadSession();
+
+    // Listen for auth changes to handle login persistence
+    supabase.auth.onAuthStateChange((event, session) => {
+      const user = session?.user || null;
+      renderLoginState(user);
+      if (event === 'SIGNED_IN') {
+        loginDlg.close();
+        // Coba tutup dialog upload juga jika terbuka
+        // Ini berguna jika pengguna harus login saat akan mengupload
+        uploadDlg.close();
+      }
+    });
 
     // Login/Register sederhana
-    document.getElementById('loginForm').addEventListener('submit', async (e)=>{
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const email = document.getElementById('email').value.trim();
       const pwd = document.getElementById('pwd').value.trim();
-      // Coba sign in dulu
-      let { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({ email, password: pwd });
-      if(signInErr){
-        // Jika error, coba sign up (register)
-        const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({ email, password: pwd });
-        if(signUpErr){ alert('Login/Register gagal: ' + signUpErr.message); return; }
-        alert('Registrasi berhasil. Anda sudah login.');
-        currentUser = signUpData.user;
-      } else {
-        currentUser = signInData.user;
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+
+      try {
+        // Coba sign in dulu
+        let { error } = await supabase.auth.signInWithPassword({ email, password: pwd });
+
+        if (error && error.message.includes('Invalid login credentials')) {
+          // Jika login gagal, coba sign up (register)
+          const { error: signUpErr } = await supabase.auth.signUp({ email, password: pwd });
+          if (signUpErr) {
+            alert('Login/Register gagal: ' + signUpErr.message);
+          } else {
+            alert('Registrasi berhasil. Anda sudah login.');
+            // onAuthStateChange akan menangani pembaruan UI & menutup dialog
+          }
+        } else if (error) {
+          alert('Login/Register gagal: ' + error.message);
+        }
+        // Jika sukses, onAuthStateChange akan menangani pembaruan UI & menutup dialog
+      } catch (err) {
+        alert('Terjadi kesalahan tak terduga. Coba lagi.');
+      } finally {
+        submitBtn.disabled = false;
       }
-      renderLoginState();
-      loginDlg.close();
     });
 
     // ====== UPLOAD APK ======
-    btnUpload.addEventListener('click', ()=>{
-      if(!currentUser){ loginDlg.showModal(); } else { uploadDlg.showModal(); }
+    btnUpload.addEventListener('click', () => {
+      if (!currentUser) {
+        loginDlg.showModal();
+      } else {
+        uploadDlg.showModal();
+      }
     });
 
-    document.getElementById('uploadForm').addEventListener('submit', async (e)=>{
+    document.getElementById('uploadForm').addEventListener('submit', async function(e) {
       e.preventDefault();
-      if(!currentUser){ loginDlg.showModal(); return; }
-
-      const name = document.getElementById('appName').value.trim();
-      const category = document.getElementById('category').value;
-      const desc = document.getElementById('desc').value.trim();
-      const version = document.getElementById('version').value.trim();
-      const sizeText = document.getElementById('size').value.trim();
-      const apkFile = document.getElementById('apkFile').files[0];
-
-      if(!apkFile) { alert('Pilih file APK.'); return; }
-      if(!apkFile.name.toLowerCase().endsWith('.apk')){
-        alert('File harus .apk'); return;
-      }
-      if(apkFile.size > 1024*1024*1024){ // 1GB
-        alert('Maksimum 1GB'); return;
+      if (!currentUser) {
+        alert('Anda harus login untuk mengupload.');
+        loginDlg.showModal();
+        return;
       }
 
-      // Path unik
-      const fileId = crypto.randomUUID();
-      const path = `${currentUser.id}/${fileId}.apk`;
+      const submitBtn = this.querySelector('button[type="submit"]');
+      const originalBtnText = submitBtn.textContent;
 
-      // Upload ke bucket 'apks'
-      const { data: upData, error: upErr } = await supabase.storage
-        .from('apks')
-        .upload(path, apkFile, { contentType: 'application/vnd.android.package-archive', upsert: false });
+      try {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Mengunggah...';
 
-      if(upErr){ alert('Gagal upload: ' + upErr.message); return; }
+        const name = document.getElementById('appName').value.trim();
+        const category = document.getElementById('category').value;
+        const desc = document.getElementById('desc').value.trim();
+        const version = document.getElementById('version').value.trim();
+        const sizeText = document.getElementById('size').value.trim();
+        const apkFile = document.getElementById('apkFile').files[0];
 
-      // URL download
-      let downloadUrl = null;
-      if(USE_SIGNED_URLS){
-        const { data: signed, error: signErr } = await supabase.storage.from('apks').createSignedUrl(path, 60*60*24); // 24 jam
-        if(signErr){ alert('Gagal buat signed URL: ' + signErr.message); return; }
-        downloadUrl = signed.signedUrl;
-      } else {
-        downloadUrl = supabase.storage.from('apks').getPublicUrl(path).data.publicUrl;
+        if (!apkFile) {
+          alert('Pilih file APK.');
+          return;
+        }
+        if (!apkFile.name.toLowerCase().endsWith('.apk')) {
+          alert('File harus berekstensi .apk');
+          return;
+        }
+        if (apkFile.size > 1024 * 1024 * 1024) { // 1GB
+          alert('Ukuran file maksimal adalah 1GB.');
+          return;
+        }
+
+        const fileId = crypto.randomUUID();
+        const path = `${currentUser.id}/${fileId}.apk`;
+
+        const { error: upErr } = await supabase.storage
+          .from('apks')
+          .upload(path, apkFile, {
+            contentType: 'application/vnd.android.package-archive',
+            upsert: false
+          });
+
+        if (upErr) {
+          throw new Error('Gagal upload file: ' + upErr.message);
+        }
+
+        const { error: insErr } = await supabase
+          .from('games')
+          .insert({
+            title: name,
+            category: category,
+            description: desc,
+            version: version || null,
+            size: sizeText || Math.round(apkFile.size / 1024 / 1024) + ' MB',
+            apk_path: path,
+            uploaded_by: currentUser.id
+          });
+
+        if (insErr) {
+          await supabase.storage.from('apks').remove([path]);
+          throw new Error('Gagal menyimpan data game: ' + insErr.message);
+        }
+
+        alert('Upload sukses! Game akan tampil di beranda.');
+        uploadDlg.close();
+        await loadGames();
+
+      } catch (error) {
+        alert(error.message);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalBtnText;
       }
-
-      // Simpan metadata ke tabel games
-      const { error: insErr } = await supabase
-        .from('games')
-        .insert({
-          title: name,
-          category: category,
-          description: desc,
-          version: version || null,
-          size: sizeText || Math.round(apkFile.size/1024/1024)+' MB',
-          img_url: null,        // bisa ditambah upload poster kalau mau
-          apk_path: path,
-          uploaded_by: currentUser.id
-        });
-
-      if(insErr){ alert('Gagal simpan metadata: ' + insErr.message); return; }
-
-      alert('Upload sukses! Game tampil di beranda.');
-      uploadDlg.close();
-      await loadGames();  // refresh list
     });
 
     // ====== LIST & RENDER GAMES ======
@@ -430,7 +473,7 @@
 
     // ====== INISIALISASI ======
     (async function init(){
-      await loadSession();
+      // onAuthStateChange akan menangani sesi awal secara otomatis
       await loadGames();
     })();
   </script>
