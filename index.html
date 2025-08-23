@@ -216,6 +216,31 @@
     </form>
   </dialog>
 
+  <!-- Game Detail Dialog -->
+  <dialog id="gameDetailDlg">
+    <div class="dlg-head">
+      <strong id="detailTitle">Game Title</strong>
+      <button class="btn-pill btn-ghost" onclick="gameDetailDlg.close()">Close</button>
+    </div>
+    <div class="dlg-body">
+      <div class="detail-header">
+        <img id="detailIcon" src="game.png" alt="Game Icon" style="width: 96px; height: 96px; border-radius: 24px; border: 3px solid #000; object-fit: cover;"/>
+        <div>
+          <h2 id="detailTitleHeader" style="margin: 0 0 8px 0; font-size: 24px; color: #0e4372;">Game Title</h2>
+          <div id="detailCategory" class="pill" style="pointer-events:none;display:inline-block;">Category</div>
+        </div>
+      </div>
+      <div class="detail-meta" style="display: flex; gap: 20px; font-size: 14px; color: #4b5b70; margin-bottom: 16px;">
+        <span>Version: <strong id="detailVersion">1.0</strong></span>
+        <span>Size: <strong id="detailSize">50 MB</strong></span>
+      </div>
+      <p id="detailDesc" style="line-height: 1.6;">This is the full description of the game...</p>
+      <div class="dlg-actions" style="justify-content:center;">
+        <a id="detailDownloadBtn" class="btn-pill btn-primary" href="#" download>Download APK</a>
+      </div>
+    </div>
+  </dialog>
+
   <!-- Supabase JS -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -238,6 +263,7 @@
     const loginStateEl = document.getElementById('loginState');
     const loginDlg = document.getElementById('loginDlg');
     const uploadDlg = document.getElementById('uploadDlg');
+    const gameDetailDlg = document.getElementById('gameDetailDlg');
     const grid = document.getElementById('gameGrid');
     const emptyState = document.getElementById('emptyState');
 
@@ -247,7 +273,7 @@
     openDrawerBtn.addEventListener('click', openDrawer);
     closeDrawerBtn.addEventListener('click', closeDrawer);
     backdrop.addEventListener('click', closeDrawer);
-    document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') { closeDrawer(); loginDlg.close(); uploadDlg.close(); } });
+    document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') { closeDrawer(); loginDlg.close(); uploadDlg.close(); gameDetailDlg.close(); } });
 
     // ====== AUTH ======
     let currentUser = null;
@@ -275,8 +301,6 @@
       renderLoginState(user);
       if (event === 'SIGNED_IN') {
         loginDlg.close();
-        // Coba tutup dialog upload juga jika terbuka
-        // Ini berguna jika pengguna harus login saat akan mengupload
         uploadDlg.close();
       }
     });
@@ -290,17 +314,13 @@
       submitBtn.disabled = true;
 
       try {
-        // Coba sign in dulu
         let { error } = await supabase.auth.signInWithPassword({ email, password: pwd });
 
         if (error && error.message.includes('Invalid login credentials')) {
-          // Jika login gagal, coba sign up (register)
           const { error: signUpErr } = await supabase.auth.signUp({
             email,
             password: pwd,
-            options: {
-              emailRedirectTo: window.location.origin,
-            },
+            options: { emailRedirectTo: window.location.origin },
           });
           if (signUpErr) {
             alert('Login/Register gagal: ' + signUpErr.message);
@@ -311,7 +331,6 @@
         } else if (error) {
           alert('Login/Register gagal: ' + error.message);
         }
-        // Jika sukses, onAuthStateChange akan menangani pembaruan UI & menutup dialog
       } catch (err) {
         alert('Terjadi kesalahan tak terduga. Coba lagi.');
       } finally {
@@ -338,6 +357,8 @@
 
       const submitBtn = this.querySelector('button[type="submit"]');
       const originalBtnText = submitBtn.textContent;
+      let iconPath = null;
+      let apkPath = null;
 
       try {
         submitBtn.disabled = true;
@@ -349,99 +370,118 @@
         const version = document.getElementById('version').value.trim();
         const sizeText = document.getElementById('size').value.trim();
         const gameFile = document.getElementById('apkFile').files[0];
+        const iconFile = document.getElementById('iconFile').files[0];
 
-        if (!gameFile) {
-          alert('Pilih file game.');
+        if (!gameFile || !iconFile) {
+          alert('Harap pilih file game dan file icon.');
           return;
         }
-        const fileName = gameFile.name.toLowerCase();
-        if (!fileName.endsWith('.apk') && !fileName.endsWith('.zip')) {
-          alert('File harus berekstensi .apk atau .zip');
+        const gameFileName = gameFile.name.toLowerCase();
+        if (!gameFileName.endsWith('.apk') && !gameFileName.endsWith('.zip')) {
+          alert('File game harus berekstensi .apk atau .zip');
           return;
         }
-        if (gameFile.size > 1024 * 1024 * 1024) { // 1GB
-          alert('Ukuran file maksimal adalah 1GB.');
-          return;
-        }
+        if (gameFile.size > 1024 * 1024 * 1024) { alert('Ukuran file game maksimal adalah 1GB.'); return; }
+        if (iconFile.size > 5 * 1024 * 1024) { alert('Ukuran file icon maksimal adalah 5MB.'); return; }
 
-        const fileExt = fileName.split('.').pop();
-        const fileId = crypto.randomUUID();
-        const path = `${currentUser.id}/${fileId}.${fileExt}`;
-        const contentType = fileExt === 'apk' ? 'application/vnd.android.package-archive' : 'application/zip';
+        const iconFileExt = iconFile.name.split('.').pop();
+        const iconFileId = crypto.randomUUID();
+        iconPath = `${currentUser.id}/icon_${iconFileId}.${iconFileExt}`;
+        const { error: iconUpErr } = await supabase.storage.from('apks').upload(iconPath, iconFile, { upsert: false });
+        if (iconUpErr) throw new Error('Gagal upload icon: ' + iconUpErr.message);
 
-        const { error: upErr } = await supabase.storage
-          .from('apks')
-          .upload(path, gameFile, {
-            contentType,
-            upsert: false
-          });
+        const gameFileExt = gameFileName.split('.').pop();
+        const gameFileId = crypto.randomUUID();
+        apkPath = `${currentUser.id}/${gameFileId}.${gameFileExt}`;
+        const contentType = gameFileExt === 'apk' ? 'application/vnd.android.package-archive' : 'application/zip';
+        const { error: apkUpErr } = await supabase.storage.from('apks').upload(apkPath, gameFile, { contentType, upsert: false });
+        if (apkUpErr) throw new Error('Gagal upload file game: ' + apkUpErr.message);
 
-        if (upErr) {
-          throw new Error('Gagal upload file: ' + upErr.message);
-        }
-
-        const { error: insErr } = await supabase
-          .from('games')
-          .insert({
-            title: name,
-            category: category,
-            description: desc,
-            version: version || null,
+        const { error: insErr } = await supabase.from('games').insert({
+            title: name, category: category, description: desc, version: version || null,
             size: sizeText || Math.round(gameFile.size / 1024 / 1024) + ' MB',
-            apk_path: path,
-            uploaded_by: currentUser.id
-          });
-
-        if (insErr) {
-          await supabase.storage.from('apks').remove([path]);
-          throw new Error('Gagal menyimpan data game: ' + insErr.message);
-        }
+            apk_path: apkPath, img_url: iconPath, uploaded_by: currentUser.id
+        });
+        if (insErr) throw new Error('Gagal menyimpan data game: ' + insErr.message);
 
         alert('Upload sukses! Game akan tampil di beranda.');
         uploadDlg.close();
+        this.reset();
         await loadGames();
 
       } catch (error) {
         alert(error.message);
+        const filesToRemove = [iconPath, apkPath].filter(p => p !== null);
+        if (filesToRemove.length > 0) {
+          await supabase.storage.from('apks').remove(filesToRemove);
+          console.log('File-file yang gagal diunggah telah dibersihkan.');
+        }
       } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = originalBtnText;
       }
     });
 
-    // ====== LIST & RENDER GAMES ======
-    async function fetchGames(){
-      const { data, error } = await supabase
-        .from('games')
-        .select('*')
-        .order('created_at', { ascending:false });
-      if(error){ console.error(error); return []; }
-      return data;
+    // ====== GAME DATA & RENDERING ======
+    function getPublicUrl(path) {
+      if (!path) return 'game.png'; // Default image
+      return supabase.storage.from('apks').getPublicUrl(path).data.publicUrl;
     }
 
-    function gameCardTemplate(g, urlResolver){
-      const thumb = g.img_url || 'game.png';
-      const rating = g.rating ? `⭐ ${Number(g.rating).toFixed(1)} • ` : '';
-      const resolvedUrl = urlResolver(g);
+    async function resolveDownloadUrl(g){
+      if (!g || !g.apk_path) return '#';
+      const publicUrl = getPublicUrl(g.apk_path);
+      if(!USE_SIGNED_URLS) return publicUrl;
+
+      const { data, error } = await supabase.storage.from('apks').createSignedUrl(g.apk_path, 60*60); // 1 jam
+      return error ? publicUrl : data.signedUrl;
+    }
+
+    function gameCardTemplate(g) {
+      const thumb = getPublicUrl(g.img_url);
+      // Remove rating for now as it's not in DB
       return `
-        <div class="card">
-          <img class="thumb" src="${thumb}" alt="${g.title}">
+        <div class="card" data-game-id="${g.id}">
+          <img class="thumb" src="${thumb}" alt="${g.title}" loading="lazy">
           <h4>${g.title}</h4>
-          <div class="meta">${rating}${g.category} • ${g.size || ''}</div>
+          <div class="meta">${g.category} • ${g.size || ''}</div>
           <div class="row-actions">
-            <a class="btn" href="${resolvedUrl}" download>Download</a>
-            <button class="btn secondary" onclick="alert('Install via file APK di perangkat Anda.')">Info</button>
+            <button class="btn download-btn" data-game-id="${g.id}">Download</button>
+            <button class="btn secondary info-btn" data-game-id="${g.id}">Info</button>
           </div>
         </div>`;
     }
 
-    async function resolveDownloadUrl(g){
-      // Jika bucket public, cukup public URL
-      const publicUrl = supabase.storage.from('apks').getPublicUrl(g.apk_path).data.publicUrl;
-      if(!USE_SIGNED_URLS) return publicUrl;
-      // Jika pakai signed
-      const { data, error } = await supabase.storage.from('apks').createSignedUrl(g.apk_path, 60*60); // 1 jam
-      return error ? publicUrl : data.signedUrl;
+    function openDetailDialog(game) {
+      document.getElementById('detailTitle').textContent = game.title;
+      document.getElementById('detailTitleHeader').textContent = game.title;
+      document.getElementById('detailIcon').src = getPublicUrl(game.img_url);
+      document.getElementById('detailCategory').textContent = game.category;
+      document.getElementById('detailVersion').textContent = game.version || 'N/A';
+      document.getElementById('detailSize').textContent = game.size || 'N/A';
+      document.getElementById('detailDesc').textContent = game.description || 'No description provided.';
+
+      const downloadBtn = document.getElementById('detailDownloadBtn');
+      downloadBtn.onclick = async (e) => {
+          e.preventDefault();
+          const originalText = downloadBtn.textContent;
+          downloadBtn.textContent = 'Preparing...';
+          downloadBtn.style.pointerEvents = 'none';
+          const url = await resolveDownloadUrl(game);
+          window.location.href = url;
+          setTimeout(() => { // Give time for download to start
+            downloadBtn.textContent = originalText;
+            downloadBtn.style.pointerEvents = 'auto';
+          }, 1500);
+      };
+
+      gameDetailDlg.showModal();
+    }
+
+    async function fetchGames(){
+      const { data, error } = await supabase.from('games').select('*').order('created_at', { ascending:false });
+      if(error){ console.error(error); return []; }
+      return data;
     }
 
     async function renderGames(list){
@@ -451,22 +491,45 @@
         return;
       }
       emptyState.style.display = 'none';
-      // Build HTML dengan resolving URL (signed/public)
-      const parts = [];
-      for(const g of list){
-        const url = await resolveDownloadUrl(g);
-        parts.push(gameCardTemplate(g, ()=>url));
-      }
-      grid.innerHTML = parts.join('');
+      grid.innerHTML = list.map(g => gameCardTemplate(g)).join('');
     }
 
     async function loadGames(){
       const all = await fetchGames();
-      window.__ALL_GAMES__ = all;
+      window.__ALL_GAMES__ = all; // Cache all games
       await applyFilterAndSearch();
     }
 
-    // ====== SEARCH & FILTER ======
+    // ====== EVENT LISTENERS ======
+    grid.addEventListener('click', async (e) => {
+        const gameId = e.target.dataset.gameId;
+        if (!gameId) return;
+
+        const game = (window.__ALL_GAMES__ || []).find(g => g.id == gameId);
+        if (!game) return;
+
+        if (e.target.classList.contains('info-btn')) {
+            openDetailDialog(game);
+        } else if (e.target.classList.contains('download-btn')) {
+            const btn = e.target;
+            btn.disabled = true;
+            btn.textContent = 'Preparing...';
+            const url = await resolveDownloadUrl(game);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = game.title.replace(/[^a-z0-9_\-]/gi, '_') + '.apk'; // Sanitize filename
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+
+            setTimeout(() => { // Re-enable button after a short delay
+              btn.disabled = false;
+              btn.textContent = 'Download';
+            }, 1500);
+        }
+    });
+
     const searchInput = document.getElementById('searchInput');
     const searchBtn = document.getElementById('searchBtn');
     const pills = Array.from(document.querySelectorAll('.pill'));
@@ -501,7 +564,6 @@
 
     // ====== INISIALISASI ======
     (async function init(){
-      // onAuthStateChange akan menangani sesi awal secara otomatis
       await loadGames();
     })();
   </script>
