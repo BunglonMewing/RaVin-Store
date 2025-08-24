@@ -129,6 +129,12 @@
     .star-rating-input .star { color: #d1d9e4; }
     .star-rating-input .star:hover, .star-rating-input .star.selected { color: #ffc107; }
 
+    /* Screenshot Gallery */
+    .screenshots-section { margin: 24px 0; }
+    .screenshot-container { display: flex; gap: 10px; overflow-x: auto; padding: 4px; background: #e9edf3; border-radius: 12px; min-height: 120px; align-items: center; }
+    .screenshot-container img { height: 240px; border-radius: 12px; object-fit: cover; }
+    .screenshot-container .empty { width: 100%; text-align: center; color: #4b5b70; }
+
 
     @media (max-width:520px) {
       .drawer { inset: 0; max-width: none; width: 100vw; }
@@ -244,6 +250,10 @@
   <label for="iconFile">Icon APK</label>
   <input id="iconFile" type="file" accept="image/*" required/>
 </div>
+<div class="row">
+  <label for="screenshotsFile">Screenshots (max 5 images)</label>
+  <input id="screenshotsFile" type="file" accept="image/*" multiple/>
+</div>
 
 <div id="uploadProgress" style="display:none;margin-top:10px">
   <progress id="progressBar" value="0" max="100" style="width:100%"></progress>
@@ -307,6 +317,14 @@
       <!-- Description -->
       <h3 class="section-title" style="color:var(--bg)">About this game</h3>
       <p id="detailDesc" class="detail-desc">This is the full description of the game...</p>
+
+      <!-- Screenshot Gallery -->
+      <div id="screenshot-gallery" class="screenshots-section" style="display:none;">
+          <h3 class="section-title" style="color:var(--bg)">Screenshots</h3>
+          <div id="screenshot-container" class="screenshot-container">
+              <!-- JS will populate this -->
+          </div>
+      </div>
 
       <!-- Comments and Rating -->
       <div class="comments-section">
@@ -439,6 +457,7 @@
       const originalBtnText = submitBtn.textContent;
       let iconPath = null;
       let apkPath = null;
+      let screenshotPaths = [];
 
       try {
         submitBtn.disabled = true;
@@ -451,11 +470,17 @@
         const sizeText = document.getElementById('size').value.trim();
         const gameFile = document.getElementById('apkFile').files[0];
         const iconFile = document.getElementById('iconFile').files[0];
+        const screenshotFiles = document.getElementById('screenshotsFile').files;
 
         if (!gameFile || !iconFile) {
           alert('Harap pilih file game dan file icon.');
           return;
         }
+        if (screenshotFiles.length > 5) {
+            alert('Anda hanya dapat mengunggah maksimal 5 screenshot.');
+            return;
+        }
+
         const gameFileName = gameFile.name.toLowerCase();
         if (!gameFileName.endsWith('.apk') && !gameFileName.endsWith('.zip')) {
           alert('File game harus berekstensi .apk atau .zip');
@@ -464,12 +489,25 @@
         if (gameFile.size > 1024 * 1024 * 1024) { alert('Ukuran file game maksimal adalah 1GB.'); return; }
         if (iconFile.size > 5 * 1024 * 1024) { alert('Ukuran file icon maksimal adalah 5MB.'); return; }
 
+        // Upload icon
         const iconFileExt = iconFile.name.split('.').pop();
         const iconFileId = crypto.randomUUID();
         iconPath = `${currentUser.id}/icon_${iconFileId}.${iconFileExt}`;
         const { error: iconUpErr } = await supabase.storage.from('apks').upload(iconPath, iconFile, { upsert: false });
         if (iconUpErr) throw new Error('Gagal upload icon: ' + iconUpErr.message);
 
+        // Upload screenshots
+        for (const file of screenshotFiles) {
+            if (file.size > 5 * 1024 * 1024) throw new Error(`Screenshot ${file.name} terlalu besar (maks 5MB).`);
+            const fileExt = file.name.split('.').pop();
+            const fileId = crypto.randomUUID();
+            const path = `${currentUser.id}/ss_${fileId}.${fileExt}`;
+            const { error } = await supabase.storage.from('apks').upload(path, file);
+            if (error) throw new Error(`Gagal mengunggah screenshot ${file.name}: ${error.message}`);
+            screenshotPaths.push(path);
+        }
+
+        // Upload game file
         const gameFileExt = gameFileName.split('.').pop();
         const gameFileId = crypto.randomUUID();
         apkPath = `${currentUser.id}/${gameFileId}.${gameFileExt}`;
@@ -477,10 +515,12 @@
         const { error: apkUpErr } = await supabase.storage.from('apks').upload(apkPath, gameFile, { contentType, upsert: false });
         if (apkUpErr) throw new Error('Gagal upload file game: ' + apkUpErr.message);
 
+        // Insert game data to DB
         const { error: insErr } = await supabase.from('games').insert({
             title: name, category: category, description: desc, version: version || null,
             size: sizeText || Math.round(gameFile.size / 1024 / 1024) + ' MB',
-            apk_path: apkPath, img_url: iconPath, uploaded_by: currentUser.id
+            apk_path: apkPath, img_url: iconPath, uploaded_by: currentUser.id,
+            screenshots: screenshotPaths
         });
         if (insErr) throw new Error('Gagal menyimpan data game: ' + insErr.message);
 
@@ -491,7 +531,7 @@
 
       } catch (error) {
         alert(error.message);
-        const filesToRemove = [iconPath, apkPath].filter(p => p !== null);
+        const filesToRemove = [iconPath, apkPath, ...screenshotPaths].filter(p => p !== null);
         if (filesToRemove.length > 0) {
           await supabase.storage.from('apks').remove(filesToRemove);
           console.log('File-file yang gagal diunggah telah dibersihkan.');
@@ -538,7 +578,7 @@
 
     async function fetchComments(gameId) {
         const { data, error } = await supabase.from('comments')
-            .select(`*, user:users(email)`)
+            .select(`*`)
             .eq('game_id', gameId)
             .order('created_at', { ascending: false });
         if (error) { console.error('Error fetching comments:', error); return []; }
@@ -670,6 +710,19 @@
       // Populate rating
       document.getElementById('detailRating').innerHTML = game.avg_rating ? `${game.avg_rating.toFixed(1)} ★` : 'N/A';
       document.getElementById('detailRatingCount').textContent = `${game.rating_count || 0} ratings`;
+
+      // Render screenshots
+      const galleryContainer = document.getElementById('screenshot-gallery');
+      const screenshotContainer = document.getElementById('screenshot-container');
+      if (game.screenshots && game.screenshots.length > 0) {
+          galleryContainer.style.display = 'block';
+          screenshotContainer.innerHTML = game.screenshots.map(path => {
+              const url = getPublicUrl(path);
+              return `<img src="${url}" alt="game screenshot" loading="lazy"/>`;
+          }).join('');
+      } else {
+          galleryContainer.style.display = 'none';
+      }
 
       const downloadBtn = document.getElementById('detailDownloadBtn');
       downloadBtn.onclick = async (e) => {
