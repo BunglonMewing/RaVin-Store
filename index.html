@@ -257,6 +257,7 @@
 
 <div id="uploadProgress" style="display:none;margin-top:10px">
   <progress id="progressBar" value="0" max="100" style="width:100%"></progress>
+  <div id="progressText" style="text-align:center; font-weight:bold; margin-top:5px;"></div>
 </div>
 
 <div id="uploadSuccess" style="display:none;color:green;font-weight:bold;margin-top:10px">
@@ -341,6 +342,9 @@
 
   <!-- Supabase JS -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Tus JS Client for Resumable Uploads -->
+  <script src="https://cdn.jsdelivr.net/npm/tus-js-client@latest/dist/tus.min.js"></script>
 
   <!-- App Script -->
   <script>
@@ -436,6 +440,56 @@
       }
     });
 
+    // ====== RESUMABLE UPLOAD HELPER ======
+    async function resumableUpload(file, path, onProgress) {
+      const { data: { session } } = await supabase.auth.getSession();
+      // Extract project ID from SUPABASE_URL
+      const projectId = new URL(SUPABASE_URL).hostname.split('.')[0];
+
+      return new Promise((resolve, reject) => {
+        const upload = new tus.Upload(file, {
+          endpoint: `${SUPABASE_URL}/storage/v1/upload/resumable`,
+          retryDelays: [0, 3000, 5000, 10000, 20000],
+          headers: {
+            authorization: `Bearer ${session.access_token}`,
+            'x-upsert': 'true', // Overwrite existing file
+          },
+          uploadDataDuringCreation: true,
+          removeFingerprintOnSuccess: true,
+          metadata: {
+            bucketName: 'apks',
+            objectName: path,
+            contentType: file.type,
+            // cacheControl: 3600 // Optional: set cache control
+          },
+          chunkSize: 6 * 1024 * 1024, // Must be 6MB for Supabase
+          onError: (error) => {
+            console.error('TUS Error:', error);
+            reject(new Error('TUS upload failed: ' + error));
+          },
+          onProgress: (bytesUploaded, bytesTotal) => {
+            if (onProgress) {
+              const percentage = ((bytesUploaded / bytesTotal) * 100).toFixed(2);
+              onProgress(bytesUploaded, bytesTotal, percentage);
+            }
+          },
+          onSuccess: () => {
+            console.log(`Upload successful for ${path}`);
+            resolve();
+          },
+        });
+
+        // Check if there are any previous uploads to continue.
+        upload.findPreviousUploads().then((previousUploads) => {
+          if (previousUploads.length) {
+            upload.resumeFromPreviousUpload(previousUploads[0]);
+          }
+          // Start the upload
+          upload.start();
+        });
+      });
+    }
+
     // ====== UPLOAD APK ======
     btnUpload.addEventListener('click', () => {
       if (!currentUser) {
@@ -493,8 +547,7 @@
         const iconFileExt = iconFile.name.split('.').pop();
         const iconFileId = crypto.randomUUID();
         iconPath = `${currentUser.id}/icon_${iconFileId}.${iconFileExt}`;
-        const { error: iconUpErr } = await supabase.storage.from('apks').upload(iconPath, iconFile, { upsert: false });
-        if (iconUpErr) throw new Error('Gagal upload icon: ' + iconUpErr.message);
+        await resumableUpload(iconFile, iconPath);
 
         // Upload screenshots
         for (const file of screenshotFiles) {
@@ -502,8 +555,7 @@
             const fileExt = file.name.split('.').pop();
             const fileId = crypto.randomUUID();
             const path = `${currentUser.id}/ss_${fileId}.${fileExt}`;
-            const { error } = await supabase.storage.from('apks').upload(path, file);
-            if (error) throw new Error(`Gagal mengunggah screenshot ${file.name}: ${error.message}`);
+            await resumableUpload(file, path);
             screenshotPaths.push(path);
         }
 
@@ -511,9 +563,14 @@
         const gameFileExt = gameFileName.split('.').pop();
         const gameFileId = crypto.randomUUID();
         apkPath = `${currentUser.id}/${gameFileId}.${gameFileExt}`;
-        const contentType = gameFileExt === 'apk' ? 'application/vnd.android.package-archive' : 'application/zip';
-        const { error: apkUpErr } = await supabase.storage.from('apks').upload(apkPath, gameFile, { contentType, upsert: false });
-        if (apkUpErr) throw new Error('Gagal upload file game: ' + apkUpErr.message);
+        await resumableUpload(gameFile, apkPath, (bytesUploaded, bytesTotal, percentage) => {
+            const progress = document.getElementById('uploadProgress');
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            progress.style.display = 'block';
+            progressBar.value = percentage;
+            progressText.textContent = `${(bytesUploaded / 1024 / 1024).toFixed(2)} MB / ${(bytesTotal / 1024 / 1024).toFixed(2)} MB (${percentage}%)`;
+        });
 
         // Insert game data to DB
         const { error: insErr } = await supabase.from('games').insert({
@@ -524,10 +581,16 @@
         });
         if (insErr) throw new Error('Gagal menyimpan data game: ' + insErr.message);
 
-        alert('Upload sukses! Game akan tampil di beranda.');
-        uploadDlg.close();
-        this.reset();
-        await loadGames();
+        const successMessage = document.getElementById('uploadSuccess');
+        successMessage.style.display = 'block';
+        setTimeout(() => {
+            uploadDlg.close();
+            this.reset();
+            loadGames();
+            successMessage.style.display = 'none';
+            document.getElementById('uploadProgress').style.display = 'none';
+        }, 2000);
+
 
       } catch (error) {
         alert(error.message);
