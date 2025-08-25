@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" href="/favicon.ico" type="image/png">
+  <link rel="manifest" href="/site.webmanifest">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RaVin Store - Pusat Download Game Android Gratis</title>
+  <meta name="description" content="Temukan dan unduh game Android terbaru dan terpopuler secara gratis di RaVin Store. Jelajahi berbagai kategori game mulai dari aksi, olahraga, strategi, simulasi, hingga balapan. Dapatkan game favoritmu dengan mudah dan cepat.">
+  <meta name="keywords" content="download game, game android, apk gratis, ravin store, game gratis, game terbaru, game populer, game aksi, game balapan, game olahraga, game strategi">
+  <link rel="canonical" href="https://ravinstore.pages.dev/">
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://ravinstore.pages.dev/">
+  <meta property="og:title" content="RaVin Store - Pusat Download Game Android Gratis">
+  <meta property="og:description" content="Temukan dan unduh game Android terbaru dan terpopuler secara gratis di RaVin Store.">
+  <meta property="og:image" content="https://ravinstore.pages.dev/logo.png">
+  <meta property="og:site_name" content="RaVin Store">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://ravinstore.pages.dev/">
+  <meta name="twitter:title" content="RaVin Store - Pusat Download Game Android Gratis">
+  <meta name="twitter:description" content="Temukan dan unduh game Android terbaru dan terpopuler secara gratis di RaVin Store.">
+  <meta name="twitter:image" content="https://ravinstore.pages.dev/logo.png">
+
+  <style>
+    :root {
+      --bg: #0e4372; --bg-2: #1e537f; --ink: #ffffff; --card: #103c66;
+      --muted: #cfd6df; --accent: #f2f5f9; --pill: #2f2f2f;
+      --radius: 20px; --shadow: 0 8px 24px rgba(0,0,0,.25);
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg); color: var(--ink);
+      overflow-x: hidden;
+    }
+
+    /* Top bar */
+    .topbar { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 10px; padding: 12px 10px; background: var(--bg); }
+    .hamburger { cursor: pointer; display: inline-flex; flex-direction: column; gap: 5px; padding: 6px; border-radius: 8px; border: 2px solid #fff; box-shadow: 0 1px 0 #000 inset; background: #0c3a62; }
+    .hamburger span { display: block; width: 20px; height: 2.5px; background: #fff; border-radius: 5px; box-shadow: 0 1px 0 #000; }
+    .search-wrap { flex: 1; display: flex; align-items: center; justify-content: center; }
+    .search { display: flex; align-items: center; gap: 6px; background: #fff; border: 3px solid #000; border-radius: 28px; padding: 2px 10px; max-width: 300px; width: 100%; box-shadow: var(--shadow); }
+    .search input { flex: 1; border: none; font-weight: 700; color: #1a1a1a; outline: none; font-size: 16px; }
+    .search button { border: none; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .search .icon { width: 38px; height: 38px; object-fit: contain; }
+    .profile { margin-left: auto; }
+    .profile img { width: 48px; height: 48px; border-radius: 12px; display: block; }
+
+    /* Content */
+    .container { padding: 8px 14px 80px 14px; max-width: 1100px; margin: 0 auto; }
+    .section-title { margin: 8px 4px 6px 4px; font-weight: 800; opacity: .95; }
+
+    /* Controls */
+    .controls { display: flex; gap: 10px; align-items: center; margin: 8px 4px 12px 4px; flex-wrap: wrap; }
+    .pill { background: #e9edf3; color: #0d2b48; border: 2px solid #000; border-radius: 999px; padding: 6px 10px; font-weight: 800; cursor: pointer; }
+    .pill.active { background: #0d2b48; color: #e9edf3; }
+
+    /* Grid */
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; }
+    .card { background: var(--card); border-radius: 16px; padding: 10px; box-shadow: 0 6px 16px rgba(0,0,0,.25); display: flex; flex-direction: column; cursor: pointer; border: 2px solid #1a5a96; transition: transform .2s ease; }
+    .card:hover { transform: translateY(-4px); }
+    .thumb { width: 100%; height: 160px; object-fit: cover; border-radius: 10px; border: 2px solid #000; background: #0b2f52; }
+    .card h4 { margin: 10px 0 4px 0; font-size: 16px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .meta { font-size: 13px; color: var(--muted); }
+    .rating-stars { font-size: 14px; color: #ffc107; }
+    .rating-stars .muted { color: #788a9b; }
+    .empty { opacity: .8; text-align: center; margin: 20px 0; }
+
+    /* Drawer */
+    .backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.45); backdrop-filter: blur(2px); opacity: 0; pointer-events: none; transition: opacity .25s ease; z-index: -1; }
+    .backdrop.show { opacity: 1; pointer-events: auto; z-index: 29; }
+    .drawer { position: fixed; inset: 0 30% 0 auto; max-width: 520px; width: 92vw; padding: 18px; transform: translateX(-110%); transition: transform .35s ease; z-index: -1; pointer-events: none; }
+    .drawer.show { transform: translateX(0); z-index: 30; pointer-events: auto; }
+    .panel { background: #3b3b3b; border-radius: 26px; padding: 18px; box-shadow: var(--shadow); border: 3px solid #000; }
+    .brand { display: flex; gap: 18px; align-items: center; background: #2f2f2f; border-radius: 20px; padding: 16px; border: 3px solid #000; }
+    .brand img { width: 72px; height: 72px; border-radius: 16px; }
+    .brand h1 { margin: 0; font-weight: 900; letter-spacing: 2px; }
+    .menu { margin-top: 18px; display: flex; flex-direction: column; gap: 16px; }
+    .menu .btnx { display: flex; align-items: center; gap: 14px; background: #5a5a5a; border-radius: 22px; padding: 18px; border: 3px solid #000; cursor: pointer; text-decoration: none; }
+    .menu .btnx img { width: 42px; height: 42px; border-radius: 10px; }
+    .menu .btnx span { font-weight: 900; font-size: 22px; color: #fff; text-shadow: 0 2px 0 #000; }
+    .helper { font-size: 13px; color: #d7dee7; margin-top: 8px; }
+
+    /* Dialogs */
+    dialog { border: none; border-radius: 20px; max-width: 620px; width: 95vw; padding: 0; background: var(--accent); box-shadow: var(--shadow); }
+    dialog::backdrop { background: rgba(0,0,0,.5); }
+    .dlg-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; background: var(--bg); color: var(--ink); border-radius: 20px 20px 0 0; }
+    .dlg-body { padding: 16px 18px; color: #18212c; max-height: 75vh; overflow-y: auto; }
+    .row { display: grid; gap: 8px; margin: 10px 0; }
+    .row label { font-weight: 700; }
+    .row input[type="text"], .row input[type="email"], .row input[type="password"], .row textarea, .row select { padding: 10px 12px; border-radius: 10px; border: 2px solid var(--bg); outline: none; font-size: 15px; }
+    .row input[type="file"] { padding: 10px 12px; border-radius: 10px; border: 2px dashed var(--bg); background: #fff; }
+    .dlg-actions { display: flex; gap: 10px; justify-content: flex-end; padding: 0 18px 18px 18px; }
+    .btn-pill { border: none; border-radius: 999px; padding: 10px 16px; font-weight: 800; cursor: pointer; }
+    .btn-primary { background: var(--bg); color: var(--ink); }
+    .btn-ghost { background: #e9edf3; color: var(--bg); }
+    .tiny { font-size: 12px; color: #4b5b70; }
+
+    /* Game Detail Dialog */
+    .detail-header { display: flex; gap: 16px; align-items: flex-start; }
+    #detailIcon { width: 96px; height: 96px; border-radius: 24px; border: 3px solid #000; object-fit: cover; flex-shrink: 0; }
+    #detailTitleHeader { margin: 0; font-size: 24px; color: var(--bg); }
+    #detailCategory { pointer-events: none; display: inline-block; margin-top: 4px; }
+    .detail-summary { display: flex; justify-content: space-around; text-align: center; margin: 20px 0; padding: 10px 0; border-top: 1px solid #d1d9e4; border-bottom: 1px solid #d1d9e4; }
+    .summary-item strong { display: block; font-size: 18px; color: var(--bg); }
+    .summary-item span { font-size: 13px; color: #4b5b70; }
+    .detail-desc { line-height: 1.6; margin-bottom: 20px; }
+    .detail-actions { display: flex; justify-content: center; margin: 16px 0; }
+    #detailDownloadBtn { font-size: 18px; padding: 12px 24px; }
+
+    /* Comments & Ratings Section */
+    .comments-section { margin-top: 24px; padding-top: 16px; border-top: 1px solid #d1d9e4; }
+    .comments-section h3 { margin: 0 0 16px 0; color: var(--bg); }
+    #comment-list { display: flex; flex-direction: column; gap: 14px; max-height: 300px; overflow-y: auto; padding: 8px; background: #e9edf3; border-radius: 12px; }
+    .comment { display: flex; gap: 12px; }
+    .comment .avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--bg); color: var(--ink); display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0; }
+    .comment-body { display: flex; flex-direction: column; }
+    .comment-body strong { font-size: 15px; }
+    .comment-body span { font-size: 12px; color: #4b5b70; }
+    .comment-body p { margin: 4px 0 0 0; font-size: 14px; }
+    #rating-form { margin-top: 20px; }
+    .star-rating-input { display: flex; gap: 4px; font-size: 28px; cursor: pointer; }
+    .star-rating-input .star { color: #d1d9e4; }
+    .star-rating-input .star:hover, .star-rating-input .star.selected { color: #ffc107; }
+
+    /* Screenshot Gallery */
+    .screenshots-section { margin: 24px 0; }
+    .screenshot-container { display: flex; gap: 10px; overflow-x: auto; padding: 4px; background: #e9edf3; border-radius: 12px; min-height: 120px; align-items: center; }
+    .screenshot-container img { height: 240px; border-radius: 12px; object-fit: cover; }
+    .screenshot-container .empty { width: 100%; text-align: center; color: #4b5b70; }
+
+
+    @media (max-width:520px) {
+      .drawer { inset: 0; max-width: none; width: 100vw; }
+      .brand img { width: 58px; height: 58px; }
+      .menu .btnx span { font-size: 20px; }
+      .grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+      .thumb { height: 140px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Top bar -->
+  <div class="topbar">
+    <button id="openDrawer" aria-label="Open menu" class="hamburger">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="search-wrap">
+      <div class="search">
+        <input id="searchInput" type="text" placeholder="Search Game" aria-label="Search Game" />
+        <button id="searchBtn" aria-label="Cari">
+          <img class="cari.png" src="cari.png" alt="search"/>
+        </button>
+      </div>
+    </div>
+    <div class="profile"><img src="icon.png" alt="profile"/></div>
+  </div>
+  
+  <!-- Container -->
+  <div class="container">
+    <h3 class="section-title">Recommended for you</h3>
+
+    <div class="controls">
+      <button class="pill active" data-cat="all">All</button>
+      <button class="pill" data-cat="Sports">Sports</button>
+      <button class="pill" data-cat="Action">Action</button>
+      <button class="pill" data-cat="Strategy">Strategy</button>
+      <button class="pill" data-cat="Simulation">Simulation</button>
+      <button class="pill" data-cat="Casual">Casual</button>
+      <button class="pill" data-cat="Racing">Racing</button>
+      <button class="pill" data-cat="Max2D">Max2D</button>
+    </div>
+
+    <div id="gameGrid" class="grid" aria-live="polite"></div>
+    <div id="emptyState" class="empty" style="display:none">Belum ada game. Upload yang pertama! 🎮</div>
+  </div>
+
+  <!-- Drawer -->
+  <div id="backdrop" class="backdrop"></div>
+  <aside id="drawer" class="drawer" aria-hidden="true" aria-label="Main menu">
+    <div class="panel">
+      <button id="closeDrawerBtn" class="btn-pill btn-ghost" style="position:absolute;top:28px;right:28px;padding:4px 10px;font-size:14px">Close</button>
+      <div class="brand">
+        <img src="icon.png" alt="JBF logo"/>
+        <div>
+          <h1>Ravin Store</h1>
+          <div id="loginState" class="helper">Not logged in</div>
+        </div>
+      </div>
+      <div class="menu">
+        <button id="btnUpload" class="btnx">
+          <img src="game.png" alt="Upload"/>
+          <span>Upload Game (Free)</span>
+        </button>
+        <button id="btnLogin" class="btnx">
+          <img src="google.png" alt="Login"/>
+          <span id="loginText">Login</span>
+        </button>
+        <a class="btnx" href="https://youtube.com/@bira_gaming?si=DGz6T4hPHaMqTtZx" target="_blank" rel="noopener noreferrer">
+          <img src="logo.png" alt="BIRA GM"/>
+          <span>Support Store Creator</span>
+          </button>
+        <a class="btnx" href="https://youtube.com/@circledevelop?si=Dz7sOT2jXQZKKTV0" target="_blank" rel="noopener noreferrer">
+          <img src="devin.png" alt="BIRA GM"/>
+          <span>Support Store Creator</span>
+        </a>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Login Dialog -->
+  <dialog id="loginDlg">
+    <div class="dlg-head">
+      <strong>Login / Register</strong>
+      <button class="btn-pill btn-ghost" onclick="loginDlg.close()">Close</button>
+    </div>
+    <form id="loginForm" class="dlg-body" method="dialog">
+      <div class="row">
+        <label for="email">Email</label>
+        <input id="email" type="email" required placeholder="you@gmail.com"/>
+      </div>
+      <div class="row">
+        <label for="pwd">Password</label>
+        <input id="pwd" type="password" required placeholder="••••••••"/>
+      </div>
+      <div class="tiny">Gunakan akun baru untuk register otomatis; jika sudah ada akan login.</div>
+      <div class="dlg-actions">
+        <button type="button" class="btn-pill btn-ghost" onclick="loginDlg.close()">Batal</button>
+        <button type="submit" class="btn-pill btn-primary">Masuk</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Upload Dialog -->
+  <dialog id="uploadDlg">
+    <div class="dlg-head">
+      <strong>Upload Game</strong>
+      <button class="btn-pill btn-ghost" onclick="uploadDlg.close()">Close</button>
+    </div>
+    <form id="uploadForm" class="dlg-body" method="dialog">
+      <div class="row"><label for="appName">Nama Game</label><input id="appName" type="text" required placeholder="Contoh: Super Football 23"/></div>
+      <div class="row"><label for="apkFile">File Game (APK/ZIP)</label><input id="apkFile" type="file" accept=".apk,.zip,application/vnd.android.package-archive,application/zip" required/></div>
+      <div class="row">
+  <label for="iconFile">Icon APK</label>
+  <input id="iconFile" type="file" accept="image/*" required/>
+</div>
+<div class="row">
+  <label for="screenshotsFile">Screenshots (max 5 images)</label>
+  <input id="screenshotsFile" type="file" accept="image/*" multiple/>
+</div>
+
+<div id="uploadProgress" style="display:none;margin-top:10px">
+  <progress id="progressBar" value="0" max="100" style="width:100%"></progress>
+  <div id="progressText" style="text-align:center; font-weight:bold; margin-top:5px;"></div>
+</div>
+
+<div id="uploadSuccess" style="display:none;color:green;font-weight:bold;margin-top:10px">
+  Sukses!!
+</div>
+      <div class="row"><label for="category">Kategori</label>
+        <select id="category" required>
+          <option value="">Pilih kategori…</option>
+          <option>Sports</option><option>Action</option><option>Strategy</option>
+          <option>Simulation</option><option>Casual</option><option>Racing</option>
+          <option>Max2D</option>
+        </select>
+      </div>
+      <div class="row"><label for="desc">Deskripsi</label><textarea id="desc" rows="4" placeholder="Tulis deskripsi singkat game…"></textarea></div>
+      <div class="row"><label for="size">Ukuran file</label><input id="size" type="text" placeholder="mis. 120 MB"/></div>
+      <div class="row"><label for="version">Versi</label><input id="version" type="text" placeholder="1.0.0"/></div>
+      <div class="dlg-actions">
+        <button type="button" class="btn-pill btn-ghost" onclick="uploadDlg.close()">Batal</button>
+        <button type="submit" class="btn-pill btn-primary">Kirim</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Game Detail Dialog -->
+  <dialog id="gameDetailDlg">
+    <div class="dlg-head">
+      <strong id="detailTitle">Game Title</strong>
+      <button class="btn-pill btn-ghost" onclick="gameDetailDlg.close()">Close</button>
+    </div>
+    <div id="gameDetailBody" class="dlg-body">
+      <!-- Header -->
+      <div class="detail-header">
+        <img id="detailIcon" src="game.png" alt="Game Icon"/>
+        <div>
+          <h2 id="detailTitleHeader">Game Title</h2>
+          <div id="detailCategory" class="pill">Category</div>
+        </div>
+      </div>
+      <!-- Summary -->
+      <div class="detail-summary">
+        <div class="summary-item">
+          <strong id="detailRating">N/A</strong>
+          <span id="detailRatingCount">0 ratings</span>
+        </div>
+        <div class="summary-item">
+          <strong><span id="detailSize">N/A</span></strong>
+          <span>Size</span>
+        </div>
+        <div class="summary-item">
+          <strong id="detailVersion">N/A</strong>
+          <span>Version</span>
+        </div>
+      </div>
+      <!-- Download Action -->
+      <div class="detail-actions">
+        <a id="detailDownloadBtn" class="btn-pill btn-primary" href="#" download>Download</a>
+      </div>
+      <!-- Description -->
+      <h3 class="section-title" style="color:var(--bg)">About this game</h3>
+      <p id="detailDesc" class="detail-desc">This is the full description of the game...</p>
+
+      <!-- Screenshot Gallery -->
+      <div id="screenshot-gallery" class="screenshots-section" style="display:none;">
+          <h3 class="section-title" style="color:var(--bg)">Screenshots</h3>
+          <div id="screenshot-container" class="screenshot-container">
+              <!-- JS will populate this -->
+          </div>
+      </div>
+
+      <!-- Comments and Rating -->
+      <div class="comments-section">
+        <h3>Ratings and reviews</h3>
+        <div id="rating-form-container">
+          <!-- Rating form will be inserted here by JS -->
+        </div>
+        <div id="comment-list">
+          <div class="empty">No reviews yet.</div>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Supabase JS -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Tus JS Client for Resumable Uploads -->
+  <script src="https://cdn.jsdelivr.net/npm/tus-js-client@latest/dist/tus.min.js"></script>
+
+  <!-- App Script -->
+  <script>
+    // ====== KONFIGURASI SUPABASE ======
+    const SUPABASE_URL = "https://wpoatnvzlvgrpqlkgixp.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indwb2F0bnZ6bHZncnBxbGtnaXhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU4NDM1ODEsImV4cCI6MjA3MTQxOTU4MX0.VoJqq_M0jcdn5rkaL2lzbmf07ohnlzwNyC8mLmqb_4E";
+    const USE_SIGNED_URLS = true; // true = link download pakai signed URL (kedaluwarsa)
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // ====== UI ELEMENTS ======
+    const drawer = document.getElementById('drawer');
+    const backdrop = document.getElementById('backdrop');
+    const openDrawerBtn = document.getElementById('openDrawer');
+    const closeDrawerBtn = document.getElementById('closeDrawerBtn');
+    const btnUpload = document.getElementById('btnUpload');
+    const btnLogin = document.getElementById('btnLogin');
+    const loginText = document.getElementById('loginText');
+    const loginStateEl = document.getElementById('loginState');
+    const loginDlg = document.getElementById('loginDlg');
+    const uploadDlg = document.getElementById('uploadDlg');
+    const gameDetailDlg = document.getElementBy
