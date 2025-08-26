@@ -608,18 +608,43 @@
     });
 
     // ====== GAME DATA & RENDERING ======
-    function getPublicUrl(path) {
+    window.signedUrlCache = new Map(); // Cache untuk signed URLs
+
+    async function createSignedImageUrl(path) {
       if (!path) return "data:image/svg+xml;utf8,<svg viewBox='0 0 128 128' xmlns='http://www.w3.org/2000/svg'><path fill='currentColor' d='M 96.75,22.375 C 87.8,22.24 78.78,27.23 73.31,38.41 L 18.44,62.19 L 18.25,62.25 C 8.64,67.49 4,75.88 3.22,84.47 C 2.44,93.06 5.34,101.86 10.44,108.66 C 15.54,115.45 22.92,120.32 31.25,120.5 C 39.58,120.68 48.46,116.01 56.19,104.91 L 56.28,104.81 C 69.71,97.56 82.78,91.81 101.25,83.88 C 110.96,79.6 123.59,70.86 124.25,44.28 C 120.46,32.73 111,24.6 100.66,22.75 C 99.36,22.52 98.06,22.39 96.75,22.375 z'/><g fill='white'><path d='M48,52 h-8 v-8 h-8 v8 h-8 v8 h8 v8 h8 v-8 h8z'/><circle cx='80' cy='52' r='6'/><circle cx='94' cy='45' r='6'/></g></svg>"; // Default image
-      return supabase.storage.from('apks').getPublicUrl(path).data.publicUrl;
+
+      const cachedUrl = window.signedUrlCache.get(path);
+      if (cachedUrl) return cachedUrl;
+
+      try {
+        const { data, error } = await supabase.storage.from('apks').createSignedUrl(path, 300); // 5 menit expiry
+        if (error) {
+          console.error(`Error creating signed URL for ${path}:`, error);
+          return "data:image/svg+xml;utf8,<svg/>"; // Placeholder on error
+        }
+        window.signedUrlCache.set(path, data.signedUrl);
+        return data.signedUrl;
+      } catch (err) {
+        console.error(`Exception for ${path}:`, err);
+        return "data:image/svg+xml;utf8,<svg/>"; // Placeholder on error
+      }
     }
 
     async function resolveDownloadUrl(g){
       if (!g || !g.apk_path) return '#';
-      const publicUrl = getPublicUrl(g.apk_path);
-      if(!USE_SIGNED_URLS) return publicUrl;
 
+      // Jika tidak pakai signed URL, coba pakai public URL (asumsi bucket public)
+      if(!USE_SIGNED_URLS) {
+        return supabase.storage.from('apks').getPublicUrl(g.apk_path).data.publicUrl;
+      }
+
+      // Gunakan signed URL untuk download
       const { data, error } = await supabase.storage.from('apks').createSignedUrl(g.apk_path, 60*60); // 1 jam
-      return error ? publicUrl : data.signedUrl;
+      if (error) {
+        // Fallback ke public URL jika gagal membuat signed URL
+        return supabase.storage.from('apks').getPublicUrl(g.apk_path).data.publicUrl;
+      }
+      return data.signedUrl;
     }
 
     function renderStars(rating = 0) {
@@ -630,11 +655,10 @@
       return full + half + empty;
     }
 
-    function gameCardTemplate(g) {
-      const thumb = getPublicUrl(g.img_url);
+    function gameCardTemplate(g, thumbnailUrl) {
       return `
         <div class="card" data-game-id="${g.id}">
-          <img class="thumb" src="${thumb}" alt="${g.title}" loading="lazy">
+          <img class="thumb" src="${thumbnailUrl}" alt="${g.title}" loading="lazy">
           <h4>${g.title}</h4>
           <div class="meta">${g.category || 'N/A'}</div>
           <div class="rating-stars">${renderStars(g.avg_rating)}</div>
@@ -762,45 +786,47 @@
       document.getElementById('gameDetailBody').scrollTop = 0;
       document.getElementById('comment-list').innerHTML = '<div class="empty">Loading reviews...</div>';
       document.getElementById('rating-form-container').innerHTML = '';
+      const detailIcon = document.getElementById('detailIcon');
+      const defaultIcon = "data:image/svg+xml;utf8,<svg viewBox='0 0 128 128' xmlns='http://www.w3.org/2000/svg'><path fill='currentColor' d='M 96.75,22.375 C 87.8,22.24 78.78,27.23 73.31,38.41 L 18.44,62.19 L 18.25,62.25 C 8.64,67.49 4,75.88 3.22,84.47 C 2.44,93.06 5.34,101.86 10.44,108.66 C 15.54,115.45 22.92,120.32 31.25,120.5 C 39.58,120.68 48.46,116.01 56.19,104.91 L 56.28,104.81 C 69.71,97.56 82.78,91.81 101.25,83.88 C 110.96,79.6 123.59,70.86 124.25,44.28 C 120.46,32.73 111,24.6 100.66,22.75 C 99.36,22.52 98.06,22.39 96.75,22.375 z'/><g fill='white'><path d='M48,52 h-8 v-8 h-8 v8 h-8 v8 h8 v8 h8 v-8 h8z'/><circle cx='80' cy='52' r='6'/><circle cx='94' cy='45' r='6'/></g></svg>";
+      detailIcon.src = defaultIcon;
 
       // Populate basic info
       document.getElementById('detailTitle').textContent = game.title;
       document.getElementById('detailTitleHeader').textContent = game.title;
-      document.getElementById('detailIcon').src = getPublicUrl(game.img_url);
       document.getElementById('detailCategory').textContent = game.category;
       document.getElementById('detailVersion').textContent = game.version || 'N/A';
       document.getElementById('detailSize').textContent = game.size || 'N/A';
       document.getElementById('detailDesc').textContent = game.description || 'No description provided.';
-
-      // Populate rating
       document.getElementById('detailRating').innerHTML = game.avg_rating ? `${game.avg_rating.toFixed(1)} ★` : 'N/A';
       document.getElementById('detailRatingCount').textContent = `${game.rating_count || 0} ratings`;
 
-      // Render screenshots
+      // Show dialog immediately with text content
+      gameDetailDlg.showModal();
+
+      // Asynchronously load images
+      createSignedImageUrl(game.img_url).then(url => detailIcon.src = url || defaultIcon);
+
       const galleryContainer = document.getElementById('screenshot-gallery');
       const screenshotContainer = document.getElementById('screenshot-container');
+      screenshotContainer.innerHTML = `<div class="empty">Loading screenshots...</div>`;
 
       let screenshotPaths = game.screenshots;
-      // Handle case where screenshots might be a JSON string
       if (typeof screenshotPaths === 'string' && screenshotPaths.trim().startsWith('[')) {
-        try {
-          screenshotPaths = JSON.parse(screenshotPaths);
-        } catch (e) {
-          console.error("Error parsing screenshots JSON:", e);
-          screenshotPaths = [];
-        }
+        try { screenshotPaths = JSON.parse(screenshotPaths); } catch (e) { screenshotPaths = []; }
       }
 
       if (Array.isArray(screenshotPaths) && screenshotPaths.length > 0) {
           galleryContainer.style.display = 'block';
-          screenshotContainer.innerHTML = screenshotPaths.map(path => {
-              const url = getPublicUrl(path);
-              return `<img src="${url}" alt="game screenshot" loading="lazy"/>`;
-          }).join('');
+          const urlPromises = screenshotPaths.map(path => createSignedImageUrl(path));
+          Promise.all(urlPromises).then(urls => {
+            screenshotContainer.innerHTML = urls.map(url => `<img src="${url}" alt="game screenshot" loading="lazy"/>`).join('');
+          });
       } else {
           galleryContainer.style.display = 'none';
+          screenshotContainer.innerHTML = '';
       }
 
+      // Setup download button
       const downloadBtn = document.getElementById('detailDownloadBtn');
       downloadBtn.onclick = async (e) => {
           e.preventDefault();
@@ -814,17 +840,13 @@
           }, 1500);
       };
 
-      gameDetailDlg.showModal();
-
       // Fetch and render comments
-      const comments = await fetchComments(game.id);
-      renderComments(comments);
+      fetchComments(game.id).then(comments => renderComments(comments));
 
       // If user is logged in, show rating form
       if (currentUser) {
-          const { data, error } = await supabase.from('ratings')
-              .select('rating').eq('game_id', game.id).eq('user_id', currentUser.id).single();
-          createRatingForm(game.id, data ? data.rating : 0);
+          supabase.from('ratings').select('rating').eq('game_id', game.id).eq('user_id', currentUser.id).single()
+            .then(({ data }) => createRatingForm(game.id, data ? data.rating : 0));
       }
     }
 
@@ -841,7 +863,19 @@
         return;
       }
       emptyState.style.display = 'none';
-      grid.innerHTML = list.map(g => gameCardTemplate(g)).join('');
+      grid.innerHTML = `<div class="empty">Loading game images...</div>`;
+
+      try {
+        const urlPromises = list.map(g => createSignedImageUrl(g.img_url));
+        const urls = await Promise.all(urlPromises);
+
+        grid.innerHTML = list.map((g, index) => {
+          return gameCardTemplate(g, urls[index]);
+        }).join('');
+      } catch (error) {
+        console.error("Error loading game images:", error);
+        grid.innerHTML = `<div class="empty">Error loading images. Please try again.</div>`;
+      }
     }
 
     async function loadGames(){
