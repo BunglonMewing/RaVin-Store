@@ -25,316 +25,218 @@
   <meta name="twitter:description" content="Temukan dan unduh game Android terbaru dan terpopuler secara gratis di RaVin Store.">
   <meta name="twitter:image" content="https://ravinstore.pages.dev/logo.png">
 
-  <style>
-    :root {
-      --bg: #0e4372; --bg-2: #1e537f; --ink: #ffffff; --card: #103c66;
-      --muted: #cfd6df; --accent: #f2f5f9; --pill: #2f2f2f;
-      --radius: 20px; --shadow: 0 8px 24px rgba(0,0,0,.25);
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#0e4372',
+            'primary-dark': '#1e537f',
+            'primary-light': '#103c66',
+            light: '#ffffff',
+            muted: '#cfd6df',
+            accent: '#f2f5f9',
+            dark: '#2f2f2f',
+          }
+        }
+      }
     }
-    * { box-sizing: border-box; }
-    html, body { height: 100%; }
-    body {
-      margin: 0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, "Helvetica Neue", Arial, sans-serif;
-      background: var(--bg); color: var(--ink);
-      overflow-x: hidden;
-    }
+  </script>
 
-    /* Top bar */
-    .topbar { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 10px; padding: 12px 10px; background: var(--bg); }
-    .hamburger { cursor: pointer; display: inline-flex; flex-direction: column; gap: 5px; padding: 6px; border-radius: 8px; border: 2px solid #fff; box-shadow: 0 1px 0 #000 inset; background: #0c3a62; }
-    .hamburger span { display: block; width: 20px; height: 2.5px; background: #fff; border-radius: 5px; box-shadow: 0 1px 0 #000; }
-    .search-wrap { flex: 1; display: flex; align-items: center; justify-content: center; }
-    .search { display: flex; align-items: center; gap: 6px; background: #fff; border: 3px solid #000; border-radius: 28px; padding: 2px 10px; max-width: 280px; width: 100%; box-shadow: var(--shadow); }
-    .search input { flex: 1; border: none; font-weight: 700; color: #1a1a1a; outline: none; font-size: 16px; }
-    .search button { border: none; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-    .search .icon { width: 10px; height: 10px; object-fit: contain; }
-    .profile { margin-left: auto; }
-    .profile img { width: 48px; height: 48px; border-radius: 12px; display: block; }
-
-    /* Content */
-    .container { padding: 8px 14px 80px 14px; max-width: 1100px; margin: 0 auto; }
-    .section-title { margin: 8px 4px 6px 4px; font-weight: 800; opacity: .95; }
-
-    /* Controls */
-    .controls { display: flex; gap: 10px; align-items: center; margin: 8px 4px 12px 4px; flex-wrap: wrap; }
-    .pill { background: #e9edf3; color: #0d2b48; border: 2px solid #000; border-radius: 999px; padding: 6px 10px; font-weight: 800; cursor: pointer; }
-    .pill.active { background: #0d2b48; color: #e9edf3; }
-
-    /* Grid */
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; }
-    .card { background: var(--card); border-radius: 16px; padding: 10px; box-shadow: 0 6px 16px rgba(0,0,0,.25); display: flex; flex-direction: column; cursor: pointer; border: 2px solid #1a5a96; transition: transform .2s ease; }
-    .card:hover { transform: translateY(-4px); }
-    .thumb { width: 100%; height: 160px; object-fit: cover; border-radius: 10px; border: 2px solid #000; background: #0b2f52; }
-    .card h4 { margin: 10px 0 4px 0; font-size: 16px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .meta { font-size: 13px; color: var(--muted); }
-    .rating-stars { font-size: 14px; color: #ffc107; }
-    .rating-stars .muted { color: #788a9b; }
-    .empty { opacity: .8; text-align: center; margin: 20px 0; }
-
-    /* Drawer */
-    .backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.45); backdrop-filter: blur(2px); opacity: 0; pointer-events: none; transition: opacity .25s ease; z-index: -1; }
-    .backdrop.show { opacity: 1; pointer-events: auto; z-index: 29; }
-    .drawer { position: fixed; inset: 0 30% 0 auto; max-width: 520px; width: 92vw; padding: 18px; transform: translateX(-110%); transition: transform .35s ease; z-index: -1; pointer-events: none; }
-    .drawer.show { transform: translateX(0); z-index: 30; pointer-events: auto; }
-    .panel { background: #3b3b3b; border-radius: 26px; padding: 18px; box-shadow: var(--shadow); border: 3px solid #000; }
-    .brand { display: flex; gap: 18px; align-items: center; background: #2f2f2f; border-radius: 20px; padding: 16px; border: 3px solid #000; }
-    .brand img { width: 72px; height: 72px; border-radius: 16px; }
-    .brand h1 { margin: 0; font-weight: 900; letter-spacing: 2px; }
-    .menu { margin-top: 18px; display: flex; flex-direction: column; gap: 16px; }
-    .menu .btnx { display: flex; align-items: center; gap: 14px; background: #5a5a5a; border-radius: 22px; padding: 18px; border: 3px solid #000; cursor: pointer; text-decoration: none; }
-    .menu .btnx img { width: 42px; height: 42px; border-radius: 10px; }
-    .menu .btnx span { font-weight: 900; font-size: 22px; color: #fff; text-shadow: 0 2px 0 #000; }
-    .helper { font-size: 13px; color: #d7dee7; margin-top: 8px; }
-
-    /* Dialogs */
-    dialog { border: none; border-radius: 20px; max-width: 620px; width: 95vw; padding: 0; background: var(--accent); box-shadow: var(--shadow); }
-    dialog::backdrop { background: rgba(0,0,0,.5); }
-    .dlg-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; background: var(--bg); color: var(--ink); border-radius: 20px 20px 0 0; }
-    .dlg-body { padding: 16px 18px; color: #18212c; max-height: 75vh; overflow-y: auto; }
-    .row { display: grid; gap: 8px; margin: 10px 0; }
-    .row label { font-weight: 700; }
-    .row input[type="text"], .row input[type="email"], .row input[type="password"], .row textarea, .row select { padding: 10px 12px; border-radius: 10px; border: 2px solid var(--bg); outline: none; font-size: 15px; }
-    .row input[type="file"] { padding: 10px 12px; border-radius: 10px; border: 2px dashed var(--bg); background: #fff; }
-    .dlg-actions { display: flex; gap: 10px; justify-content: flex-end; padding: 0 18px 18px 18px; }
-    .btn-pill { border: none; border-radius: 999px; padding: 10px 16px; font-weight: 800; cursor: pointer; }
-    .btn-primary { background: var(--bg); color: var(--ink); }
-    .btn-ghost { background: #e9edf3; color: var(--bg); }
-    .tiny { font-size: 12px; color: #4b5b70; }
-
-    /* Game Detail Dialog */
-    .detail-header { display: flex; gap: 16px; align-items: flex-start; }
-    #detailIcon { width: 96px; height: 96px; border-radius: 24px; border: 3px solid #000; object-fit: cover; flex-shrink: 0; }
-    #detailTitleHeader { margin: 0; font-size: 24px; color: var(--bg); }
-    #detailCategory { pointer-events: none; display: inline-block; margin-top: 4px; }
-    .detail-summary { display: flex; justify-content: space-around; text-align: center; margin: 20px 0; padding: 10px 0; border-top: 1px solid #d1d9e4; border-bottom: 1px solid #d1d9e4; }
-    .summary-item strong { display: block; font-size: 18px; color: var(--bg); }
-    .summary-item span { font-size: 13px; color: #4b5b70; }
-    .detail-desc { line-height: 1.6; margin-bottom: 20px; }
-    .detail-actions { display: flex; justify-content: center; margin: 16px 0; }
-    #detailDownloadBtn { font-size: 18px; padding: 12px 24px; }
-
-    /* Comments & Ratings Section */
-    .comments-section { margin-top: 24px; padding-top: 16px; border-top: 1px solid #d1d9e4; }
-    .comments-section h3 { margin: 0 0 16px 0; color: var(--bg); }
-    #comment-list { display: flex; flex-direction: column; gap: 14px; max-height: 300px; overflow-y: auto; padding: 8px; background: #e9edf3; border-radius: 12px; }
-    .comment { display: flex; gap: 12px; }
-    .comment .avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--bg); color: var(--ink); display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0; }
-    .comment-body { display: flex; flex-direction: column; }
-    .comment-body strong { font-size: 15px; }
-    .comment-body span { font-size: 12px; color: #4b5b70; }
-    .comment-body p { margin: 4px 0 0 0; font-size: 14px; }
-    #rating-form { margin-top: 20px; }
-    .star-rating-input { display: flex; gap: 4px; font-size: 28px; cursor: pointer; }
-    .star-rating-input .star { color: #d1d9e4; }
-    .star-rating-input .star:hover, .star-rating-input .star.selected { color: #ffc107; }
-
-    /* Screenshot Gallery */
-    .screenshots-section { margin: 24px 0; }
-    .screenshot-container { display: flex; gap: 10px; overflow-x: auto; padding: 4px; background: #e9edf3; border-radius: 12px; min-height: 120px; align-items: center; }
-    .screenshot-container img { height: 240px; border-radius: 12px; object-fit: cover; }
-    .screenshot-container .empty { width: 100%; text-align: center; color: #4b5b70; }
-
-
-    @media (max-width:520px) {
-      .drawer { inset: 0; max-width: none; width: 100vw; }
-      .brand img { width: 58px; height: 58px; }
-      .menu .btnx span { font-size: 20px; }
-      .grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
-      .thumb { height: 140px; }
-    }
-  </style>
 </head>
-<body>
+<body class="bg-primary text-light font-sans overflow-x-hidden">
   <!-- Top bar -->
-  <div class="topbar">
-    <button id="openDrawer" aria-label="Open menu" class="hamburger">
-      <span></span><span></span><span></span>
+  <div class="sticky top-0 z-20 flex items-center gap-2.5 p-3 bg-primary">
+    <button id="openDrawer" aria-label="Open menu" class="cursor-pointer inline-flex flex-col gap-[5px] p-1.5 rounded-lg border-2 border-white shadow-[inset_0_1px_0_#000] bg-[#0c3a62]">
+      <span class="block w-5 h-[2.5px] bg-white rounded-[5px] shadow-[0_1px_0_#000]"></span>
+      <span class="block w-5 h-[2.5px] bg-white rounded-[5px] shadow-[0_1px_0_#000]"></span>
+      <span class="block w-5 h-[2.5px] bg-white rounded-[5px] shadow-[0_1px_0_#000]"></span>
     </button>
-    <div class="search-wrap">
-      <div class="search">
-        <input id="searchInput" type="text" placeholder="Search Game" aria-label="Search Game" />
-        <button id="searchBtn" aria-label="Cari">
-          <img class="cari.png" src="cari.png" alt="search"/>
+    <div class="flex-1 flex items-center justify-center">
+      <div class="flex items-center gap-1.5 bg-white border-[3px] border-black rounded-full py-0.5 px-2.5 max-w-xs w-full shadow-lg">
+        <input id="searchInput" type="text" placeholder="Search Game" aria-label="Search Game" class="flex-1 border-none font-bold text-gray-800 outline-none text-base bg-transparent" />
+        <button id="searchBtn" aria-label="Cari" class="border-none bg-transparent cursor-pointer flex items-center justify-center">
+          <img class="w-2.5 h-2.5 object-contain" src="cari.png" alt="search"/>
         </button>
       </div>
     </div>
-    <div class="profile"><img src="icon.png" alt="profile"/></div>
+    <div class="ml-auto"><img src="icon.png" alt="profile" class="w-12 h-12 rounded-xl block"/></div>
   </div>
   
   <!-- Container -->
-  <div class="container">
-    <h3 class="section-title">Recommended for you</h3>
+  <div class="max-w-6xl mx-auto px-3.5 pb-20 pt-2">
+    <h3 class="my-2 mx-1 font-extrabold opacity-95">Recommended for you</h3>
 
-    <div class="controls">
-      <button class="pill active" data-cat="all">All</button>
-      <button class="pill" data-cat="Sports">Sports</button>
-      <button class="pill" data-cat="Action">Action</button>
-      <button class="pill" data-cat="Strategy">Strategy</button>
-      <button class="pill" data-cat="Simulation">Simulation</button>
-      <button class="pill" data-cat="Casual">Casual</button>
-      <button class="pill" data-cat="Racing">Racing</button>
-      <button class="pill" data-cat="Max2D">Max2D</button>
+    <div class="flex gap-2.5 items-center my-2 mx-1 flex-wrap">
+      <button class="font-extrabold cursor-pointer border-2 border-black rounded-full py-1.5 px-2.5 bg-primary text-accent" data-cat="all">All</button>
+      <button class="font-extrabold cursor-pointer border-2 border-black rounded-full py-1.5 px-2.5 bg-accent text-primary" data-cat="Sports">Sports</button>
+      <button class="font-extrabold cursor-pointer border-2 border-black rounded-full py-1.5 px-2.5 bg-accent text-primary" data-cat="Action">Action</button>
+      <button class="font-extrabold cursor-pointer border-2 border-black rounded-full py-1.5 px-2.5 bg-accent text-primary" data-cat="Strategy">Strategy</button>
+      <button class="font-extrabold cursor-pointer border-2 border-black rounded-full py-1.5 px-2.5 bg-accent text-primary" data-cat="Simulation">Simulation</button>
+      <button class="font-extrabold cursor-pointer border-2 border-black rounded-full py-1.5 px-2.5 bg-accent text-primary" data-cat="Casual">Casual</button>
+      <button class="font-extrabold cursor-pointer border-2 border-black rounded-full py-1.5 px-2.5 bg-accent text-primary" data-cat="Racing">Racing</button>
+      <button class="font-extrabold cursor-pointer border-2 border-black rounded-full py-1.5 px-2.5 bg-accent text-primary" data-cat="Max2D">Max2D</button>
     </div>
 
-    <div id="gameGrid" class="grid" aria-live="polite"></div>
-    <div id="emptyState" class="empty" style="display:none">Belum ada game. Upload yang pertama! 🎮</div>
+    <div id="gameGrid" class="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-4" aria-live="polite"></div>
+    <div id="emptyState" class="opacity-80 text-center my-5" style="display:none">Belum ada game. Upload yang pertama! 🎮</div>
   </div>
 
   <!-- Drawer -->
-  <div id="backdrop" class="backdrop"></div>
-  <aside id="drawer" class="drawer" aria-hidden="true" aria-label="Main menu">
-    <div class="panel">
-      <button id="closeDrawerBtn" class="btn-pill btn-ghost" style="position:absolute;top:28px;right:28px;padding:4px 10px;font-size:14px">Close</button>
-      <div class="brand">
-        <img src="icon.png" alt="JBF logo"/>
+  <div id="backdrop" class="fixed inset-0 bg-black/40 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-250 ease-in-out z-20"></div>
+  <aside id="drawer" class="fixed inset-y-0 left-0 w-[92vw] max-w-[520px] p-[18px] -translate-x-full transition-transform duration-350 ease-in-out z-30 pointer-events-none" aria-hidden="true" aria-label="Main menu">
+    <div class="bg-[#3b3b3b] rounded-[26px] p-[18px] shadow-lg border-[3px] border-black h-full relative">
+      <button id="closeDrawerBtn" class="absolute top-7 right-7 py-1 px-2.5 text-sm rounded-full cursor-pointer font-extrabold bg-accent text-primary">Close</button>
+      <div class="flex gap-[18px] items-center bg-dark rounded-[20px] p-4 border-[3px] border-black">
+        <img src="icon.png" alt="JBF logo" class="w-[72px] h-[72px] rounded-[16px]"/>
         <div>
-          <h1>Ravin Store</h1>
-          <div id="loginState" class="helper">Not logged in</div>
+          <h1 class="m-0 font-black tracking-[2px]">Ravin Store</h1>
+          <div id="loginState" class="text-sm text-[#d7dee7] mt-2">Not logged in</div>
         </div>
       </div>
-      <div class="menu">
-        <button id="btnUpload" class="btnx">
-          <img src="game.png" alt="Upload"/>
-          <span>Upload Game (Free)</span>
+      <div class="mt-[18px] flex flex-col gap-4">
+        <button id="btnUpload" class="flex items-center gap-3.5 bg-[#5a5a5a] rounded-[22px] p-[18px] border-[3px] border-black cursor-pointer no-underline">
+          <img src="game.png" alt="Upload" class="w-[42px] h-[42px] rounded-[10px]"/>
+          <span class="font-black text-[22px] text-white" style="text-shadow: 0 2px 0 #000;">Upload Game (Free)</span>
         </button>
-        <button id="btnLogin" class="btnx">
-          <img src="google.png" alt="Login"/>
-          <span id="loginText">Login</span>
+        <button id="btnLogin" class="flex items-center gap-3.5 bg-[#5a5a5a] rounded-[22px] p-[18px] border-[3px] border-black cursor-pointer no-underline">
+          <img src="google.png" alt="Login" class="w-[42px] h-[42px] rounded-[10px]"/>
+          <span id="loginText" class="font-black text-[22px] text-white" style="text-shadow: 0 2px 0 #000;">Login</span>
         </button>
-        <a class="btnx" href="https://youtube.com/@bira_gaming?si=DGz6T4hPHaMqTtZx" target="_blank" rel="noopener noreferrer">
-          <img src="logo.png" alt="BIRA GM"/>
-          <span>Support Store Creator</span>
-          </button>
-        <a class="btnx" href="https://youtube.com/@circledevelop?si=Dz7sOT2jXQZKKTV0" target="_blank" rel="noopener noreferrer">
-          <img src="devin.png" alt="BIRA GM"/>
-          <span>Support Store Creator</span>
+        <a class="flex items-center gap-3.5 bg-[#5a5a5a] rounded-[22px] p-[18px] border-[3px] border-black cursor-pointer no-underline" href="https://youtube.com/@bira_gaming?si=DGz6T4hPHaMqTtZx" target="_blank" rel="noopener noreferrer">
+          <img src="logo.png" alt="BIRA GM" class="w-[42px] h-[42px] rounded-[10px]"/>
+          <span class="font-black text-[22px] text-white" style="text-shadow: 0 2px 0 #000;">Support Store Creator</span>
+        </a>
+        <a class="flex items-center gap-3.5 bg-[#5a5a5a] rounded-[22px] p-[18px] border-[3px] border-black cursor-pointer no-underline" href="https://youtube.com/@circledevelop?si=Dz7sOT2jXQZKKTV0" target="_blank" rel="noopener noreferrer">
+          <img src="devin.png" alt="BIRA GM" class="w-[42px] h-[42px] rounded-[10px]"/>
+          <span class="font-black text-[22px] text-white" style="text-shadow: 0 2px 0 #000;">Support Store Creator</span>
         </a>
       </div>
     </div>
   </aside>
 
   <!-- Login Dialog -->
-  <dialog id="loginDlg">
-    <div class="dlg-head">
-      <strong>Login / Register</strong>
-      <button class="btn-pill btn-ghost" onclick="loginDlg.close()">Close</button>
+  <dialog id="loginDlg" class="border-none rounded-[20px] max-w-[620px] w-[95vw] p-0 bg-accent shadow-lg">
+    <div class="flex items-center justify-between p-3.5 bg-primary text-light rounded-t-[20px]">
+      <strong class="font-bold">Login / Register</strong>
+      <button class="border-none rounded-full py-1 px-2.5 font-extrabold cursor-pointer bg-accent text-primary" onclick="loginDlg.close()">Close</button>
     </div>
-    <form id="loginForm" class="dlg-body" method="dialog">
-      <div class="row">
-        <label for="email">Email</label>
-        <input id="email" type="email" required placeholder="you@gmail.com"/>
+    <form id="loginForm" class="p-4 text-[#18212c] max-h-[75vh] overflow-y-auto" method="dialog">
+      <div class="grid gap-2 my-2.5">
+        <label for="email" class="font-bold">Email</label>
+        <input id="email" type="email" required placeholder="you@gmail.com" class="p-2.5 rounded-lg border-2 border-primary outline-none text-[15px]"/>
       </div>
-      <div class="row">
-        <label for="pwd">Password</label>
-        <input id="pwd" type="password" required placeholder="••••••••"/>
+      <div class="grid gap-2 my-2.5">
+        <label for="pwd" class="font-bold">Password</label>
+        <input id="pwd" type="password" required placeholder="••••••••" class="p-2.5 rounded-lg border-2 border-primary outline-none text-[15px]"/>
       </div>
-      <div class="tiny">Gunakan akun baru untuk register otomatis; jika sudah ada akan login.</div>
-      <div class="dlg-actions">
-        <button type="button" class="btn-pill btn-ghost" onclick="loginDlg.close()">Batal</button>
-        <button type="submit" class="btn-pill btn-primary">Masuk</button>
+      <div class="text-xs text-[#4b5b70]">Gunakan akun baru untuk register otomatis; jika sudah ada akan login.</div>
+      <div class="flex gap-2.5 justify-end px-4 pb-4 mt-4">
+        <button type="button" class="border-none rounded-full py-2.5 px-4 font-extrabold cursor-pointer bg-accent text-primary" onclick="loginDlg.close()">Batal</button>
+        <button type="submit" class="border-none rounded-full py-2.5 px-4 font-extrabold cursor-pointer bg-primary text-light">Masuk</button>
       </div>
     </form>
   </dialog>
 
   <!-- Upload Dialog -->
-  <dialog id="uploadDlg">
-    <div class="dlg-head">
-      <strong>Upload Game</strong>
-      <button class="btn-pill btn-ghost" onclick="uploadDlg.close()">Close</button>
+  <dialog id="uploadDlg" class="border-none rounded-[20px] max-w-[620px] w-[95vw] p-0 bg-accent shadow-lg">
+    <div class="flex items-center justify-between p-3.5 bg-primary text-light rounded-t-[20px]">
+      <strong class="font-bold">Upload Game</strong>
+      <button class="border-none rounded-full py-1 px-2.5 font-extrabold cursor-pointer bg-accent text-primary" onclick="uploadDlg.close()">Close</button>
     </div>
-    <form id="uploadForm" class="dlg-body" method="dialog">
-      <div class="row"><label for="appName">Nama Game</label><input id="appName" type="text" required placeholder="Contoh: Super Football 23"/></div>
-      <div class="row"><label for="apkFile">File Game (APK/ZIP)</label><input id="apkFile" type="file" accept=".apk,.zip,application/vnd.android.package-archive,application/zip" required/></div>
-      <div class="row">
-  <label for="iconFile">Icon APK</label>
-  <input id="iconFile" type="file" accept="image/*" required/>
-</div>
-<div class="row">
-  <label for="screenshotsFile">Screenshots (max 5 images)</label>
-  <input id="screenshotsFile" type="file" accept="image/*" multiple/>
-</div>
+    <form id="uploadForm" class="p-4 text-[#18212c] max-h-[75vh] overflow-y-auto" method="dialog">
+      <div class="grid gap-2 my-2.5"><label for="appName" class="font-bold">Nama Game</label><input id="appName" type="text" required placeholder="Contoh: Super Football 23" class="p-2.5 rounded-lg border-2 border-primary outline-none text-[15px]"/></div>
+      <div class="grid gap-2 my-2.5"><label for="apkFile" class="font-bold">File Game (APK/ZIP)</label><input id="apkFile" type="file" accept=".apk,.zip,application/vnd.android.package-archive,application/zip" required class="p-2.5 rounded-lg border-2 border-dashed border-primary bg-white"/></div>
+      <div class="grid gap-2 my-2.5">
+        <label for="iconFile" class="font-bold">Icon APK</label>
+        <input id="iconFile" type="file" accept="image/*" required class="p-2.5 rounded-lg border-2 border-dashed border-primary bg-white"/>
+      </div>
+      <div class="grid gap-2 my-2.5">
+        <label for="screenshotsFile" class="font-bold">Screenshots (max 5 images)</label>
+        <input id="screenshotsFile" type="file" accept="image/*" multiple class="p-2.5 rounded-lg border-2 border-dashed border-primary bg-white"/>
+      </div>
 
-<div id="uploadProgress" style="display:none;margin-top:10px">
-  <progress id="progressBar" value="0" max="100" style="width:100%"></progress>
-  <div id="progressText" style="text-align:center; font-weight:bold; margin-top:5px;"></div>
-</div>
+      <div id="uploadProgress" style="display:none;margin-top:10px">
+        <progress id="progressBar" value="0" max="100" style="width:100%"></progress>
+        <div id="progressText" style="text-align:center; font-weight:bold; margin-top:5px;"></div>
+      </div>
 
-<div id="uploadSuccess" style="display:none;color:green;font-weight:bold;margin-top:10px">
-  Sukses!!
-</div>
-      <div class="row"><label for="category">Kategori</label>
-        <select id="category" required>
+      <div id="uploadSuccess" style="display:none;color:green;font-weight:bold;margin-top:10px">
+        Sukses!!
+      </div>
+      <div class="grid gap-2 my-2.5"><label for="category" class="font-bold">Kategori</label>
+        <select id="category" required class="p-2.5 rounded-lg border-2 border-primary outline-none text-[15px]">
           <option value="">Pilih kategori…</option>
           <option>Sports</option><option>Action</option><option>Strategy</option>
           <option>Simulation</option><option>Casual</option><option>Racing</option>
           <option>Max2D</option>
         </select>
       </div>
-      <div class="row"><label for="desc">Deskripsi</label><textarea id="desc" rows="4" placeholder="Tulis deskripsi singkat game…"></textarea></div>
-      <div class="row"><label for="size">Ukuran file</label><input id="size" type="text" placeholder="mis. 120 MB"/></div>
-      <div class="row"><label for="version">Versi</label><input id="version" type="text" placeholder="1.0.0"/></div>
-      <div class="dlg-actions">
-        <button type="button" class="btn-pill btn-ghost" onclick="uploadDlg.close()">Batal</button>
-        <button type="submit" class="btn-pill btn-primary">Kirim</button>
+      <div class="grid gap-2 my-2.5"><label for="desc" class="font-bold">Deskripsi</label><textarea id="desc" rows="4" placeholder="Tulis deskripsi singkat game…" class="p-2.5 rounded-lg border-2 border-primary outline-none text-[15px]"></textarea></div>
+      <div class="grid gap-2 my-2.5"><label for="size" class="font-bold">Ukuran file</label><input id="size" type="text" placeholder="mis. 120 MB" class="p-2.5 rounded-lg border-2 border-primary outline-none text-[15px]"/></div>
+      <div class="grid gap-2 my-2.5"><label for="version" class="font-bold">Versi</label><input id="version" type="text" placeholder="1.0.0" class="p-2.5 rounded-lg border-2 border-primary outline-none text-[15px]"/></div>
+      <div class="flex gap-2.5 justify-end px-4 pb-4 mt-4">
+        <button type="button" class="border-none rounded-full py-2.5 px-4 font-extrabold cursor-pointer bg-accent text-primary" onclick="uploadDlg.close()">Batal</button>
+        <button type="submit" class="border-none rounded-full py-2.5 px-4 font-extrabold cursor-pointer bg-primary text-light">Kirim</button>
       </div>
     </form>
   </dialog>
 
   <!-- Game Detail Dialog -->
-  <dialog id="gameDetailDlg">
-    <div class="dlg-head">
-      <strong id="detailTitle">Game Title</strong>
-      <button class="btn-pill btn-ghost" onclick="gameDetailDlg.close()">Close</button>
+  <dialog id="gameDetailDlg" class="border-none rounded-[20px] max-w-[620px] w-[95vw] p-0 bg-accent shadow-lg">
+    <div class="flex items-center justify-between p-3.5 bg-primary text-light rounded-t-[20px]">
+      <strong id="detailTitle" class="font-bold">Game Title</strong>
+      <button class="border-none rounded-full py-1 px-2.5 font-extrabold cursor-pointer bg-accent text-primary" onclick="gameDetailDlg.close()">Close</button>
     </div>
-    <div id="gameDetailBody" class="dlg-body">
+    <div id="gameDetailBody" class="p-4 text-[#18212c] max-h-[75vh] overflow-y-auto">
       <!-- Header -->
-      <div class="detail-header">
-        <img id="detailIcon" src="game.png" alt="Game Icon"/>
+      <div class="flex gap-4 items-start">
+        <img id="detailIcon" src="game.png" alt="Game Icon" class="w-24 h-24 rounded-3xl border-2 border-black object-cover flex-shrink-0"/>
         <div>
-          <h2 id="detailTitleHeader">Game Title</h2>
-          <div id="detailCategory" class="pill">Category</div>
+          <h2 id="detailTitleHeader" class="m-0 text-2xl text-primary font-bold">Game Title</h2>
+          <div id="detailCategory" class="pointer-events-none inline-block mt-1 bg-accent text-primary border-2 border-black rounded-full py-1.5 px-2.5 font-extrabold cursor-pointer">Category</div>
         </div>
       </div>
       <!-- Summary -->
-      <div class="detail-summary">
+      <div class="flex justify-around text-center my-5 py-2.5 border-y border-[#d1d9e4]">
         <div class="summary-item">
-          <strong id="detailRating">N/A</strong>
-          <span id="detailRatingCount">0 ratings</span>
+          <strong id="detailRating" class="block text-lg text-primary">N/A</strong>
+          <span id="detailRatingCount" class="text-sm text-[#4b5b70]">0 ratings</span>
         </div>
         <div class="summary-item">
-          <strong><span id="detailSize">N/A</span></strong>
-          <span>Size</span>
+          <strong class="block text-lg text-primary"><span id="detailSize">N/A</span></strong>
+          <span class="text-sm text-[#4b5b70]">Size</span>
         </div>
         <div class="summary-item">
-          <strong id="detailVersion">N/A</strong>
-          <span>Version</span>
+          <strong id="detailVersion" class="block text-lg text-primary">N/A</strong>
+          <span class="text-sm text-[#4b5b70]">Version</span>
         </div>
       </div>
       <!-- Download Action -->
-      <div class="detail-actions">
-        <a id="detailDownloadBtn" class="btn-pill btn-primary" href="#" download>Download</a>
+      <div class="flex justify-center my-4">
+        <a id="detailDownloadBtn" class="border-none rounded-full py-3 px-6 font-extrabold cursor-pointer bg-primary text-light text-lg" href="#" download>Download</a>
       </div>
       <!-- Description -->
-      <h3 class="section-title" style="color:var(--bg)">About this game</h3>
-      <p id="detailDesc" class="detail-desc">This is the full description of the game...</p>
+      <h3 class="my-2 mx-1 font-extrabold opacity-95 text-primary">About this game</h3>
+      <p id="detailDesc" class="leading-relaxed mb-5">This is the full description of the game...</p>
 
       <!-- Screenshot Gallery -->
-      <div id="screenshot-gallery" class="screenshots-section" style="display:none;">
-          <h3 class="section-title" style="color:var(--bg)">Screenshots</h3>
-          <div id="screenshot-container" class="screenshot-container">
+      <div id="screenshot-gallery" class="my-6" style="display:none;">
+          <h3 class="my-2 mx-1 font-extrabold opacity-95 text-primary">Screenshots</h3>
+          <div id="screenshot-container" class="flex gap-2.5 overflow-x-auto p-1 bg-accent rounded-xl min-h-[120px] items-center">
               <!-- JS will populate this -->
           </div>
       </div>
 
       <!-- Comments and Rating -->
-      <div class="comments-section">
-        <h3>Ratings and reviews</h3>
+      <div class="mt-6 pt-4 border-t border-[#d1d9e4]">
+        <h3 class="m-0 mb-4 text-primary font-bold">Ratings and reviews</h3>
         <div id="rating-form-container">
           <!-- Rating form will be inserted here by JS -->
         </div>
-        <div id="comment-list">
-          <div class="empty">No reviews yet.</div>
+        <div id="comment-list" class="flex flex-col gap-3.5 max-h-[300px] overflow-y-auto p-2 bg-accent rounded-xl">
+          <div class="opacity-80 text-center my-5">No reviews yet.</div>
         </div>
       </div>
     </div>
@@ -370,8 +272,21 @@
     const emptyState = document.getElementById('emptyState');
 
     // ====== DRAWER ======
-    function openDrawer(){ drawer.classList.add('show'); backdrop.classList.add('show'); drawer.setAttribute('aria-hidden','false'); }
-    function closeDrawer(){ drawer.classList.remove('show'); backdrop.classList.remove('show'); drawer.setAttribute('aria-hidden','true'); }
+    function openDrawer() {
+      backdrop.classList.remove('opacity-0', 'pointer-events-none');
+      backdrop.classList.add('opacity-100', 'pointer-events-auto');
+      drawer.classList.remove('-translate-x-full', 'pointer-events-none');
+      drawer.classList.add('translate-x-0', 'pointer-events-auto');
+      drawer.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeDrawer() {
+      backdrop.classList.add('opacity-0', 'pointer-events-none');
+      backdrop.classList.remove('opacity-100', 'pointer-events-auto');
+      drawer.classList.add('-translate-x-full', 'pointer-events-none');
+      drawer.classList.remove('translate-x-0', 'pointer-events-auto');
+      drawer.setAttribute('aria-hidden', 'true');
+    }
     openDrawerBtn.addEventListener('click', openDrawer);
     closeDrawerBtn.addEventListener('click', closeDrawer);
     backdrop.addEventListener('click', closeDrawer);
@@ -607,7 +522,7 @@
 
     // ====== GAME DATA & RENDERING ======
     function getPublicUrl(path) {
-      if (!path) return 'game.png'; // Default image
+      if (!path) return `data:image/svg+xml;charset=UTF-8,%3csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="%23cccccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"%3e%3crect x="3" y="3" width="18" height="18" rx="2" ry="2"%3e%3c/rect%3e%3ccircle cx="8.5" cy="8.5" r="1.5"%3e%3c/circle%3e%3cpolyline points="21 15 16 10 5 21"%3e%3c/polyline%3e%3c/svg%3e`; // Default image
       return supabase.storage.from('apks').getPublicUrl(path).data.publicUrl;
     }
 
@@ -622,20 +537,20 @@
 
     function renderStars(rating = 0) {
       const r = Math.round(rating * 2) / 2; // Round to nearest 0.5
-      const full = '<span class="star">★</span>'.repeat(Math.floor(r));
-      const half = r % 1 !== 0 ? '<span class="star">½</span>' : '';
-      const empty = '<span class="star muted">☆</span>'.repeat(5 - Math.ceil(r));
+      const full = '<span class="text-[#ffc107]">★</span>'.repeat(Math.floor(r));
+      const half = r % 1 !== 0 ? '<span class="text-[#ffc107]">½</span>' : '';
+      const empty = '<span class="text-[#788a9b]">☆</span>'.repeat(5 - Math.ceil(r));
       return full + half + empty;
     }
 
     function gameCardTemplate(g) {
       const thumb = getPublicUrl(g.img_url);
       return `
-        <div class="card" data-game-id="${g.id}">
-          <img class="thumb" src="${thumb}" alt="${g.title}" loading="lazy">
-          <h4>${g.title}</h4>
-          <div class="meta">${g.category || 'N/A'}</div>
-          <div class="rating-stars">${renderStars(g.avg_rating)}</div>
+        <div class="bg-primary-light rounded-2xl p-2.5 shadow-md flex flex-col cursor-pointer border-2 border-[#1a5a96] transition-transform duration-200 ease-in-out hover:-translate-y-1" data-game-id="${g.id}">
+          <img class="w-full h-40 object-cover rounded-lg border-2 border-black bg-[#0b2f52]" src="${thumb}" alt="${g.title}" loading="lazy">
+          <h4 class="mt-2.5 mb-1 text-base leading-tight whitespace-nowrap overflow-hidden text-ellipsis">${g.title}</h4>
+          <div class="text-sm text-muted">${g.category || 'N/A'}</div>
+          <div class="text-sm">${renderStars(g.avg_rating)}</div>
         </div>`;
     }
 
@@ -756,6 +671,7 @@
     }
 
     async function openDetailDialog(game) {
+      console.log('Opening detail for game:', game);
       // Reset scroll and clear old content
       document.getElementById('gameDetailBody').scrollTop = 0;
       document.getElementById('comment-list').innerHTML = '<div class="empty">Loading reviews...</div>';
@@ -777,14 +693,14 @@
       // Render screenshots
       const galleryContainer = document.getElementById('screenshot-gallery');
       const screenshotContainer = document.getElementById('screenshot-container');
+      galleryContainer.style.display = 'block'; // Always show the gallery section
       if (game.screenshots && game.screenshots.length > 0) {
-          galleryContainer.style.display = 'block';
           screenshotContainer.innerHTML = game.screenshots.map(path => {
               const url = getPublicUrl(path);
-              return `<img src="${url}" alt="game screenshot" loading="lazy"/>`;
+              return `<img src="${url}" alt="game screenshot" loading="lazy" class="h-60 rounded-xl object-cover"/>`;
           }).join('');
       } else {
-          galleryContainer.style.display = 'none';
+          screenshotContainer.innerHTML = `<div class="opacity-80 text-center my-5 w-full text-primary">No screenshots available for this game.</div>`;
       }
 
       const downloadBtn = document.getElementById('detailDownloadBtn');
@@ -838,7 +754,7 @@
 
     // ====== EVENT LISTENERS ======
     grid.addEventListener('click', async (e) => {
-        const card = e.target.closest('.card');
+        const card = e.target.closest('[data-game-id]');
         if (!card) return;
 
         const gameId = card.dataset.gameId;
@@ -852,7 +768,7 @@
 
     const searchInput = document.getElementById('searchInput');
     const searchBtn = document.getElementById('searchBtn');
-    const pills = Array.from(document.querySelectorAll('.pill'));
+    const pills = Array.from(document.querySelectorAll('[data-cat]'));
     let activeCat = 'all';
 
     function filterData(){
@@ -873,13 +789,17 @@
 
     searchBtn.addEventListener('click', applyFilterAndSearch);
     searchInput.addEventListener('input', applyFilterAndSearch);
-    pills.forEach(p=>{
-      p.addEventListener('click', ()=>{
-        pills.forEach(x=>x.classList.remove('active'));
-        p.classList.add('active');
-        activeCat = p.dataset.cat;
-        applyFilterAndSearch();
-      });
+    pills.forEach(p => {
+        p.addEventListener('click', () => {
+            pills.forEach(x => {
+                x.classList.remove('bg-primary', 'text-accent');
+                x.classList.add('bg-accent', 'text-primary');
+            });
+            p.classList.remove('bg-accent', 'text-primary');
+            p.classList.add('bg-primary', 'text-accent');
+            activeCat = p.dataset.cat;
+            applyFilterAndSearch();
+        });
     });
 
     // ====== INISIALISASI ======
