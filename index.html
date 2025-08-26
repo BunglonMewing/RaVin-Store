@@ -7,7 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>RaVin Store - Pusat Download Game Android Gratis</title>
   <meta name="description" content="Temukan dan unduh game Android terbaru dan terpopuler secara gratis di RaVin Store. Jelajahi berbagai kategori game mulai dari aksi, olahraga, strategi, simulasi, hingga balapan. Dapatkan game favoritmu dengan mudah dan cepat.">
-  <meta name="keywords" content="download game, game android, apk gratis, ravin store, game gratis, game terbaru, game populer, game aksi, game balapan, game olahraga, game strategi">
+  <meta name="keywords" content="download game, game android, apk gratis, ravin store, game gratis, game terbaru, game populer, game aksi, game balapan, game olahraga, game strategi, game simulasi, game kasual, game max2d, unduh game, apk mod">
   <link rel="canonical" href="https://ravinstore.pages.dev/">
 
   <!-- Open Graph / Facebook -->
@@ -231,7 +231,7 @@
 
       <!-- Comments and Rating -->
       <div class="mt-6 pt-4 border-t border-[#d1d9e4]">
-        <h3 class="m-0 mb-4 text-primary font-bold">Ratings and reviews</h3>
+        <h3 class="m-0 mb-4 text-primary font-bold">Rating dan Ulasan</h3>
         <div id="rating-form-container">
           <!-- Rating form will be inserted here by JS -->
         </div>
@@ -522,7 +522,7 @@
 
     // ====== GAME DATA & RENDERING ======
     function getPublicUrl(path) {
-      if (!path) return `data:image/svg+xml;charset=UTF-8,%3csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="%23cccccc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"%3e%3crect x="3" y="3" width="18" height="18" rx="2" ry="2"%3e%3c/rect%3e%3ccircle cx="8.5" cy="8.5" r="1.5"%3e%3c/circle%3e%3cpolyline points="21 15 16 10 5 21"%3e%3c/polyline%3e%3c/svg%3e`; // Default image
+      if (!path) return 'game.png'; // Default image
       return supabase.storage.from('apks').getPublicUrl(path).data.publicUrl;
     }
 
@@ -687,8 +687,8 @@
       document.getElementById('detailDesc').textContent = game.description || 'No description provided.';
 
       // Populate rating
-      document.getElementById('detailRating').innerHTML = game.avg_rating ? `${game.avg_rating.toFixed(1)} ★` : 'N/A';
-      document.getElementById('detailRatingCount').textContent = `${game.rating_count || 0} ratings`;
+      document.getElementById('detailRating').innerHTML = renderStars(game.avg_rating || 0);
+      document.getElementById('detailRatingCount').textContent = `${game.rating_count || 0} ulasan`;
 
       // Render screenshots
       const galleryContainer = document.getElementById('screenshot-gallery');
