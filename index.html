@@ -59,7 +59,8 @@
 
     /* Controls */
     .controls { display: flex; gap: 10px; align-items: center; margin: 8px 4px 12px 4px; flex-wrap: wrap; }
-    .pill { background: #e9edf3; color: #0d2b48; border: 2px solid #000; border-radius: 999px; padding: 6px 10px; font-weight: 800; cursor: pointer; }
+    .pill { background: #e9edf3; color: #0d2b48; border: 2px solid #000; border-radius: 999px; padding: 6px 12px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+    .pill svg { width: 1em; height: 1em; }
     .pill.active { background: #0d2b48; color: #e9edf3; }
 
     /* Grid */
@@ -160,7 +161,7 @@
         </button>
       </div>
     </div>
-    <div class="profile"><img src="icon.png" alt="profile"/></div>
+    <div class="profile"><img src="data:image/svg+xml;utf8,<svg viewBox='0 0 24 24' fill='currentColor' xmlns='http://www.w3.org/2000/svg'><path fill-rule='evenodd' clip-rule='evenodd' d='M9.5 9.5C9.5 8.11875 10.6188 7 12 7C13.3813 7 14.5 8.11875 14.5 9.5C14.5 10.8813 13.3813 12 12 12C10.6188 12 9.5 10.8813 9.5 9.5ZM12 8.25C12.6875 8.25 13.25 8.8125 13.25 9.5C13.25 10.1875 12.6875 10.75 12 10.75C11.3125 10.75 10.75 10.1875 10.75 9.5C10.75 8.8125 11.3125 8.25 12 8.25Z'/><path fill-rule='evenodd' clip-rule='evenodd' d='M12 13.25C10.3313 13.25 7 14.0875 7 15.75V17H17V15.75C17 14.0875 13.6688 13.25 12 13.25ZM12 14.5C13.6875 14.5 15.625 15.3063 15.75 15.75H8.25C8.39375 15.3 10.3188 14.5 12 14.5Z'/><path fill-rule='evenodd' clip-rule='evenodd' d='M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12ZM20 12C20 16.4183 16.4183 20 12 20C7.58172 20 4 16.4183 4 12C4 7.58172 7.58172 4 12 4C16.4183 4 20 7.58172 20 12Z'/></svg>" alt="profile"/></div>
   </div>
   
   <!-- Container -->
@@ -168,14 +169,14 @@
     <h3 class="section-title">Recommended for you</h3>
 
     <div class="controls">
-      <button class="pill active" data-cat="all">All</button>
-      <button class="pill" data-cat="Sports">Sports</button>
-      <button class="pill" data-cat="Action">Action</button>
-      <button class="pill" data-cat="Strategy">Strategy</button>
-      <button class="pill" data-cat="Simulation">Simulation</button>
-      <button class="pill" data-cat="Casual">Casual</button>
-      <button class="pill" data-cat="Racing">Racing</button>
-      <button class="pill" data-cat="Max2D">Max2D</button>
+      <button class="pill active" data-cat="all"><svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M10 4H4v6h6V4Zm10 0h-6v6h6V4ZM10 14H4v6h6v-6Zm10 0h-6v6h6v-6Z"/></svg>All</button>
+      <button class="pill" data-cat="Sports"><svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm.71 18.29-3.42-2.12-3.42 2.12 1.3-3.9L4.29 13.83l4.21.35 1.3-3.9 1.3 3.9 4.21-.35-2.88 2.54 1.3 3.9ZM12 6.17l.71.44.71-.44L12 5.3l-.71.44Z"/></svg>Sports</button>
+      <button class="pill" data-cat="Action"><svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 2a9 9 0 1 0 9 9 9 9 0 0 0-9-9Zm0 16a7 7 0 1 1 7-7 7 7 0 0 1-7 7Z"/><path d="M12 6a1 1 0 0 0-1 1v2a1 1 0 0 0 2 0V7a1 1 0 0 0-1-1Z"/><path d="m16.6 6.1-1.42 1.42a1 1 0 0 0 0 1.41 1 1 0 0 0 1.41 0l1.42-1.42a1 1 0 0 0-1.41-1.41Z"/></svg>Action</button>
+      <button class="pill" data-cat="Strategy"><svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 2a4 4 0 1 0 4 4 4 4 0 0 0-4-4Zm0 9c-2.21 0-4 1.79-4 4v1h8v-1c0-2.21-1.79-4-4-4Z"/><path d="M4 18h16v2H4z"/></svg>Strategy</button>
+      <button class="pill" data-cat="Simulation"><svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/><path d="M12 2a5 5 0 0 0-5 5v2a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V7a5 5 0 0 0-5-5ZM9 7a3 3 0 0 1 6 0H9Z"/><path d="M4 14h16v2H4z"/></svg>Simulation</button>
+      <button class="pill" data-cat="Casual"><svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M20 3H4v10c0 2.21 1.79 4 4 4h6c2.21 0 4-1.79 4-4v-3h2c1.11 0 2-.89 2-2V5c0-1.11-.89-2-2-2Zm0 5h-2V5h2v3Z"/></svg>Casual</button>
+      <button class="pill" data-cat="Racing"><svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M14.4 6H20v8h-5.6l.4-2 .4-2-.4-2-.4-2M14 4h8v12h-8l-1.2-6L14 4m-2 0H4v16h2V10h6V4Z"/></svg>Racing</button>
+      <button class="pill" data-cat="Max2D"><svg viewBox='0 0 128 128' xmlns='http://www.w3.org/2000/svg'><path fill='currentColor' d='M 96.75,22.375 C 87.8,22.24 78.78,27.23 73.31,38.41 L 18.44,62.19 L 18.25,62.25 C 8.64,67.49 4,75.88 3.22,84.47 C 2.44,93.06 5.34,101.86 10.44,108.66 C 15.54,115.45 22.92,120.32 31.25,120.5 C 39.58,120.68 48.46,116.01 56.19,104.91 L 56.28,104.81 C 69.71,97.56 82.78,91.81 101.25,83.88 C 110.96,79.6 123.59,70.86 124.25,44.28 C 120.46,32.73 111,24.6 100.66,22.75 C 99.36,22.52 98.06,22.39 96.75,22.375 z'/><g fill='white'><path d='M48,52 h-8 v-8 h-8 v8 h-8 v8 h8 v8 h8 v-8 h8z'/><circle cx='80' cy='52' r='6'/><circle cx='94' cy='45' r='6'/></g></svg>Max2D</button>
     </div>
 
     <div id="gameGrid" class="grid" aria-live="polite"></div>
@@ -188,7 +189,7 @@
     <div class="panel">
       <button id="closeDrawerBtn" class="btn-pill btn-ghost" style="position:absolute;top:28px;right:28px;padding:4px 10px;font-size:14px">Close</button>
       <div class="brand">
-        <img src="icon.png" alt="JBF logo"/>
+        <img src="data:image/svg+xml;utf8,<svg viewBox='0 0 24 24' fill='currentColor' xmlns='http://www.w3.org/2000/svg'><path fill-rule='evenodd' clip-rule='evenodd' d='M9.5 9.5C9.5 8.11875 10.6188 7 12 7C13.3813 7 14.5 8.11875 14.5 9.5C14.5 10.8813 13.3813 12 12 12C10.6188 12 9.5 10.8813 9.5 9.5ZM12 8.25C12.6875 8.25 13.25 8.8125 13.25 9.5C13.25 10.1875 12.6875 10.75 12 10.75C11.3125 10.75 10.75 10.1875 10.75 9.5C10.75 8.8125 11.3125 8.25 12 8.25Z'/><path fill-rule='evenodd' clip-rule='evenodd' d='M12 13.25C10.3313 13.25 7 14.0875 7 15.75V17H17V15.75C17 14.0875 13.6688 13.25 12 13.25ZM12 14.5C13.6875 14.5 15.625 15.3063 15.75 15.75H8.25C8.39375 15.3 10.3188 14.5 12 14.5Z'/><path fill-rule='evenodd' clip-rule='evenodd' d='M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12ZM20 12C20 16.4183 16.4183 20 12 20C7.58172 20 4 16.4183 4 12C4 7.58172 7.58172 4 12 4C16.4183 4 20 7.58172 20 12Z'/></svg>" alt="JBF logo"/>
         <div>
           <h1>Ravin Store</h1>
           <div id="loginState" class="helper">Not logged in</div>
@@ -196,7 +197,7 @@
       </div>
       <div class="menu">
         <button id="btnUpload" class="btnx">
-          <img src="game.png" alt="Upload"/>
+          <img src="data:image/svg+xml;utf8,<svg viewBox='0 0 128 128' xmlns='http://www.w3.org/2000/svg'><path fill='white' d='M 96.75,22.375 C 87.8,22.24 78.78,27.23 73.31,38.41 L 18.44,62.19 L 18.25,62.25 C 8.64,67.49 4,75.88 3.22,84.47 C 2.44,93.06 5.34,101.86 10.44,108.66 C 15.54,115.45 22.92,120.32 31.25,120.5 C 39.58,120.68 48.46,116.01 56.19,104.91 L 56.28,104.81 C 69.71,97.56 82.78,91.81 101.25,83.88 C 110.96,79.6 123.59,70.86 124.25,44.28 C 120.46,32.73 111,24.6 100.66,22.75 C 99.36,22.52 98.06,22.39 96.75,22.375 z'/><g fill='%23333'><path d='M48,52 h-8 v-8 h-8 v8 h-8 v8 h8 v8 h8 v-8 h8z'/><circle cx='80' cy='52' r='6'/><circle cx='94' cy='45' r='6'/></g></svg>" alt="Upload"/>
           <span>Upload Game (Free)</span>
         </button>
         <button id="btnLogin" class="btnx">
@@ -608,7 +609,7 @@
 
     // ====== GAME DATA & RENDERING ======
     function getPublicUrl(path) {
-      if (!path) return 'game.png'; // Default image
+      if (!path) return "data:image/svg+xml;utf8,<svg viewBox='0 0 128 128' xmlns='http://www.w3.org/2000/svg'><path fill='currentColor' d='M 96.75,22.375 C 87.8,22.24 78.78,27.23 73.31,38.41 L 18.44,62.19 L 18.25,62.25 C 8.64,67.49 4,75.88 3.22,84.47 C 2.44,93.06 5.34,101.86 10.44,108.66 C 15.54,115.45 22.92,120.32 31.25,120.5 C 39.58,120.68 48.46,116.01 56.19,104.91 L 56.28,104.81 C 69.71,97.56 82.78,91.81 101.25,83.88 C 110.96,79.6 123.59,70.86 124.25,44.28 C 120.46,32.73 111,24.6 100.66,22.75 C 99.36,22.52 98.06,22.39 96.75,22.375 z'/><g fill='white'><path d='M48,52 h-8 v-8 h-8 v8 h-8 v8 h8 v8 h8 v-8 h8z'/><circle cx='80' cy='52' r='6'/><circle cx='94' cy='45' r='6'/></g></svg>"; // Default image
       return supabase.storage.from('apks').getPublicUrl(path).data.publicUrl;
     }
 
@@ -778,9 +779,21 @@
       // Render screenshots
       const galleryContainer = document.getElementById('screenshot-gallery');
       const screenshotContainer = document.getElementById('screenshot-container');
-      if (game.screenshots && game.screenshots.length > 0) {
+
+      let screenshotPaths = game.screenshots;
+      // Handle case where screenshots might be a JSON string
+      if (typeof screenshotPaths === 'string' && screenshotPaths.trim().startsWith('[')) {
+        try {
+          screenshotPaths = JSON.parse(screenshotPaths);
+        } catch (e) {
+          console.error("Error parsing screenshots JSON:", e);
+          screenshotPaths = [];
+        }
+      }
+
+      if (Array.isArray(screenshotPaths) && screenshotPaths.length > 0) {
           galleryContainer.style.display = 'block';
-          screenshotContainer.innerHTML = game.screenshots.map(path => {
+          screenshotContainer.innerHTML = screenshotPaths.map(path => {
               const url = getPublicUrl(path);
               return `<img src="${url}" alt="game screenshot" loading="lazy"/>`;
           }).join('');
