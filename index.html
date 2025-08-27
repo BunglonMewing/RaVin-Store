@@ -196,6 +196,10 @@
         <div>
           <h1>Ravin Store</h1>
           <div id="loginState" class="helper">Not logged in</div>
+          <div id="coinState" class="helper" style="display: none; margin-top: 4px; font-size: 16px; align-items: center; display: flex; gap: 6px;">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#ffc107" style="width:1.2em; height:1.2em;" aria-hidden="true"><path d="M12,2C6.48,2,2,6.48,2,12s4.48,10,10,10s10-4.48,10-10S17.52,2,12,2z M12,18c-3.31,0-6-2.69-6-6s2.69-6,6-6s6,2.69,6,6 S15.31,18,12,18z M12.5,13.5h-1v-3h1V13.5z M12.5,9.5h-1V8h1V9.5z"/></svg>
+            <span id="coinBalance" style="font-weight: bold; color: white;">0</span>
+          </div>
         </div>
       </div>
       <div class="menu">
@@ -206,6 +210,10 @@
         <button id="btnUpload" class="btnx">
           <img src="data:image/svg+xml;utf8,<svg viewBox='0 0 128 128' xmlns='http://www.w3.org/2000/svg'><path fill='white' d='M 96.75,22.375 C 87.8,22.24 78.78,27.23 73.31,38.41 L 18.44,62.19 L 18.25,62.25 C 8.64,67.49 4,75.88 3.22,84.47 C 2.44,93.06 5.34,101.86 10.44,108.66 C 15.54,115.45 22.92,120.32 31.25,120.5 C 39.58,120.68 48.46,116.01 56.19,104.91 L 56.28,104.81 C 69.71,97.56 82.78,91.81 101.25,83.88 C 110.96,79.6 123.59,70.86 124.25,44.28 C 120.46,32.73 111,24.6 100.66,22.75 C 99.36,22.52 98.06,22.39 96.75,22.375 z'/><g fill='%23333'><path d='M48,52 h-8 v-8 h-8 v8 h-8 v8 h8 v8 h8 v-8 h8z'/><circle cx='80' cy='52' r='6'/><circle cx='94' cy='45' r='6'/></g></svg>" alt="Upload"/>
           <span>Upload Game (Free)</span>
+        </button>
+        <button id="btnTopUp" class="btnx">
+          <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'><path d='M11 17h2v-4h4v-2h-4V7h-2v4H7v2h4v4zm1 5q-2.075 0-3.9-.788t-3.175-2.137q-1.35-1.35-2.137-3.175T2 12q0-2.075.788-3.9t2.137-3.175q1.35-1.35 3.175-2.138T12 2q2.075 0 3.9.788t3.175 2.138q1.35 1.35 2.137 3.175T22 12q0 2.075-.788 3.9t-2.137 3.175q-1.35 1.35-3.175 2.137T12 22z'/></svg>" alt="Top Up"/>
+          <span>Top Up Koin</span>
         </button>
         <button id="btnLogin" class="btnx">
           <img src="google.png" alt="Login"/>
@@ -283,6 +291,7 @@
       <div class="row"><label for="desc">Deskripsi</label><textarea id="desc" rows="4" placeholder="Tulis deskripsi singkat game…"></textarea></div>
       <div class="row"><label for="size">Ukuran file</label><input id="size" type="text" placeholder="mis. 120 MB"/></div>
       <div class="row"><label for="version">Versi</label><input id="version" type="text" placeholder="1.0.0"/></div>
+      <div class="row"><label for="price">Harga (Koin)</label><input id="price" type="number" min="0" value="0" placeholder="0 (kosongkan jika gratis)"/></div>
       <div class="dlg-actions">
         <button type="button" class="btn-pill btn-ghost" onclick="uploadDlg.close()">Batal</button>
         <button type="submit" class="btn-pill btn-primary">Kirim</button>
@@ -374,6 +383,25 @@
     </form>
   </dialog>
 
+  <!-- Top Up Dialog -->
+  <dialog id="topupDlg">
+    <div class="dlg-head">
+      <strong>Top Up Koin</strong>
+      <button class="btn-pill btn-ghost" onclick="topupDlg.close()">Close</button>
+    </div>
+    <div class="dlg-body" style="line-height: 1.6;">
+      <h3>Cara Top Up</h3>
+      <p>Untuk melakukan top up koin, silakan ikuti langkah-langkah berikut:</p>
+      <ol>
+        <li>Hubungi nomor WhatsApp kami di: <strong><a href="https://wa.me/6285179718957" target="_blank" rel="noopener noreferrer">6285179718957</a></strong></li>
+        <li>Sebutkan <strong>email akun</strong> Anda dan jumlah koin yang ingin Anda beli.</li>
+        <li>Admin kami akan memberikan instruksi pembayaran lebih lanjut (misalnya, via Dana, GoPay, dll).</li>
+        <li>Setelah pembayaran Anda dikonfirmasi, koin akan segera ditambahkan ke akun Anda oleh admin.</li>
+      </ol>
+      <p style="margin-top: 20px; font-style: italic; font-size: 14px; color: #4b5b70;">Catatan: Proses ini dilakukan secara manual oleh admin dan mungkin memerlukan beberapa waktu. Terima kasih atas pengertian dan kesabaran Anda.</p>
+    </div>
+  </dialog>
+
   <!-- Supabase JS -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -389,6 +417,7 @@
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     // ====== UI ELEMENTS ======
+    const topupDlg = document.getElementById('topupDlg');
     const drawer = document.getElementById('drawer');
     const backdrop = document.getElementById('backdrop');
     const openDrawerBtn = document.getElementById('openDrawer');
@@ -417,34 +446,52 @@
     let userProfile = null;
 
     async function openProfileEditor() {
-      if (!currentUser) return;
+      if (!currentUser || !userProfile) return;
 
-      const { data, error } = await supabase.from('profiles').select('nickname').eq('id', currentUser.id).single();
-      if (data) {
-        userProfile = data;
-        document.getElementById('nickname').value = data.nickname || '';
-      }
+      document.getElementById('nickname').value = userProfile.nickname || '';
       profileDlg.showModal();
     }
 
-    function renderLoginState(user) {
+    async function renderLoginState(user) {
       currentUser = user;
+      const coinStateEl = document.getElementById('coinState');
+      const coinBalanceEl = document.getElementById('coinBalance');
+
       if (user) {
-        loginStateEl.textContent = `Logged in as ${user.email}`;
+        loginStateEl.textContent = `Logged in as ${user.email.split('@')[0]}`;
         loginText.textContent = 'Account';
         btnLogin.onclick = openProfileEditor;
+
+        const { data, error } = await supabase.from('profiles').select('nickname, coins').eq('id', user.id).single();
+
+        if (error && error.code !== 'PGRST116') { // PGRST116 = 'exact-one-row-not-found'
+          console.error("Error fetching profile:", error);
+        }
+
+        if (data) {
+          userProfile = data;
+          coinBalanceEl.textContent = data.coins !== null ? data.coins : 0;
+          coinStateEl.style.display = 'flex';
+        } else {
+          // Profile might not exist yet for a new user, handle this case gracefully.
+          userProfile = { id: user.id, nickname: '', coins: 0 };
+          coinBalanceEl.textContent = 0;
+          coinStateEl.style.display = 'flex';
+        }
+
       } else {
         userProfile = null;
         loginStateEl.textContent = 'Not logged in';
         loginText.textContent = 'Login';
         btnLogin.onclick = () => loginDlg.showModal();
+        coinStateEl.style.display = 'none';
       }
     }
 
     // Listen for auth changes to handle login persistence
-    supabase.auth.onAuthStateChange((event, session) => {
+    supabase.auth.onAuthStateChange(async (event, session) => {
       const user = session?.user || null;
-      renderLoginState(user);
+      await renderLoginState(user);
       if (event === 'SIGNED_IN') {
         loginDlg.close();
         uploadDlg.close();
@@ -572,6 +619,11 @@
       }
     });
 
+    document.getElementById('btnTopUp').addEventListener('click', () => {
+      topupDlg.showModal();
+      closeDrawer();
+    });
+
     document.getElementById('uploadForm').addEventListener('submit', async function(e) {
       e.preventDefault();
       if (!currentUser) {
@@ -645,12 +697,14 @@
             progressText.textContent = `${(bytesUploaded / 1024 / 1024).toFixed(2)} MB / ${(bytesTotal / 1024 / 1024).toFixed(2)} MB (${percentage}%)`;
         });
 
+        const price = parseInt(document.getElementById('price').value, 10) || 0;
         // Insert game data to DB
         const { error: insErr } = await supabase.from('games').insert({
             title: name, category: category, description: desc, version: version || null,
             size: sizeText || Math.round(gameFile.size / 1024 / 1024) + ' MB',
             apk_path: apkPath, img_url: iconPath, uploaded_by: currentUser.id,
-            screenshots: screenshotPaths
+            screenshots: screenshotPaths,
+            price: price
         });
         if (insErr) throw new Error('Gagal menyimpan data game: ' + insErr.message);
 
@@ -924,34 +978,63 @@
           screenshotContainer.innerHTML = '';
       }
 
-      // Setup download button
+      // Setup download button with price and purchase logic
       const downloadBtn = document.getElementById('detailDownloadBtn');
-      downloadBtn.onclick = async (e) => {
-          e.preventDefault();
-          downloadBtn.textContent = 'Preparing...';
-          downloadBtn.style.pointerEvents = 'none';
+      const coinIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width:1.1em; height:1.1em; vertical-align:-0.2em;" aria-hidden="true"><path d="M12,2C6.48,2,2,6.48,2,12s4.48,10,10,10s10-4.48,10-10S17.52,2,12,2z M12,18c-3.31,0-6-2.69-6-6s2.69-6,6-6s6,2.69,6,6 S15.31,18,12,18z M12.5,13.5h-1v-3h1V13.5z M12.5,9.5h-1V8h1V9.5z"/></svg>`;
+      const isPaid = game.price && game.price > 0;
+      const originalButtonText = isPaid ? `Beli (${game.price} ${coinIconSvg})` : 'Download';
+      downloadBtn.innerHTML = originalButtonText;
 
-          try {
-            // Increment download count in the background
-            const { error } = await supabase.rpc('increment_download_count', { game_id_to_update: game.id });
-            if (error) console.error('Failed to increment download count:', error);
-            else {
-              // Optionally update UI instantly
-              const currentDownloads = parseInt(document.getElementById('detailDownloads').textContent, 10);
-              document.getElementById('detailDownloads').textContent = currentDownloads + 1;
-              const gameInCache = (window.__ALL_GAMES__ || []).find(g => g.id == game.id);
-              if(gameInCache) gameInCache.download_count = (gameInCache.download_count || 0) + 1;
+      downloadBtn.onclick = async (e) => {
+        e.preventDefault();
+        downloadBtn.textContent = 'Memproses...';
+        downloadBtn.style.pointerEvents = 'none';
+
+        try {
+          // Paid Game Logic
+          if (isPaid) {
+            if (!currentUser) {
+              loginDlg.showModal();
+              throw new Error('Anda harus login untuk membeli game ini.');
             }
-          } catch (rpcError) {
-            console.error('RPC error:', rpcError);
+            if (!confirm(`Anda akan membeli ${game.title} seharga ${game.price} koin. Lanjutkan?`)) {
+              throw new Error('Pembelian dibatalkan oleh pengguna.');
+            }
+
+            const { data, error } = await supabase.rpc('purchase_game', { game_id_to_purchase: game.id });
+            if (error) { throw error; }
+
+            alert(`Pembelian berhasil!`);
+            await renderLoginState(currentUser); // Re-fetch profile to get latest coin balance
+
+          // Free Game Logic
+          } else {
+            const { error } = await supabase.rpc('increment_download_count', { game_id_to_update: game.id });
+            if (error) { throw error; }
+          }
+
+          // Common Success Logic (Download)
+          const gameInCache = (window.__ALL_GAMES__ || []).find(g => g.id == game.id);
+          if (gameInCache) {
+            gameInCache.download_count = (gameInCache.download_count || 0) + 1;
+            document.getElementById('detailDownloads').textContent = gameInCache.download_count;
           }
 
           const url = await resolveDownloadUrl(game);
           window.location.href = url;
+
+        } catch (err) {
+          // Only show alert if it's not a user cancellation
+          if (err.message !== 'Pembelian dibatalkan oleh pengguna.') {
+            alert('Gagal: ' + err.message);
+          }
+        } finally {
+          // Reset button
           setTimeout(() => {
-            downloadBtn.textContent = 'Download';
+            downloadBtn.innerHTML = originalButtonText;
             downloadBtn.style.pointerEvents = 'auto';
-          }, 1500);
+          }, 500);
+        }
       };
 
       // Setup share button
