@@ -113,8 +113,8 @@
     .summary-item strong { display: block; font-size: 18px; color: var(--bg); }
     .summary-item span { font-size: 13px; color: #4b5b70; }
     .detail-desc { line-height: 1.6; margin-bottom: 20px; }
-    .detail-actions { display: flex; justify-content: center; margin: 16px 0; }
-    #detailDownloadBtn { font-size: 18px; padding: 12px 24px; }
+    .detail-actions { display: flex; justify-content: center; gap: 10px; margin: 16px 0; }
+    #detailDownloadBtn, #detailShareBtn { font-size: 18px; padding: 12px 24px; }
 
     /* Comments & Ratings Section */
     .comments-section { margin-top: 24px; padding-top: 16px; border-top: 1px solid #d1d9e4; }
@@ -161,7 +161,7 @@
         </button>
       </div>
     </div>
-    <div class="profile"><img src="data:image/svg+xml;utf8,<svg viewBox='0 0 24 24' fill='currentColor' xmlns='http://www.w3.org/2000/svg'><path fill-rule='evenodd' clip-rule='evenodd' d='M9.5 9.5C9.5 8.11875 10.6188 7 12 7C13.3813 7 14.5 8.11875 14.5 9.5C14.5 10.8813 13.3813 12 12 12C10.6188 12 9.5 10.8813 9.5 9.5ZM12 8.25C12.6875 8.25 13.25 8.8125 13.25 9.5C13.25 10.1875 12.6875 10.75 12 10.75C11.3125 10.75 10.75 10.1875 10.75 9.5C10.75 8.8125 11.3125 8.25 12 8.25Z'/><path fill-rule='evenodd' clip-rule='evenodd' d='M12 13.25C10.3313 13.25 7 14.0875 7 15.75V17H17V15.75C17 14.0875 13.6688 13.25 12 13.25ZM12 14.5C13.6875 14.5 15.625 15.3063 15.75 15.75H8.25C8.39375 15.3 10.3188 14.5 12 14.5Z'/><path fill-rule='evenodd' clip-rule='evenodd' d='M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12ZM20 12C20 16.4183 16.4183 20 12 20C7.58172 20 4 16.4183 4 12C4 7.58172 7.58172 4 12 4C16.4183 4 20 7.58172 20 12Z'/></svg>" alt="profile"/></div>
+    <div class="profile"><img src="devin.png" alt="profile"/></div>
   </div>
   
   <!-- Container -->
@@ -189,7 +189,7 @@
     <div class="panel">
       <button id="closeDrawerBtn" class="btn-pill btn-ghost" style="position:absolute;top:28px;right:28px;padding:4px 10px;font-size:14px">Close</button>
       <div class="brand">
-        <img src="data:image/svg+xml;utf8,<svg viewBox='0 0 24 24' fill='currentColor' xmlns='http://www.w3.org/2000/svg'><path fill-rule='evenodd' clip-rule='evenodd' d='M9.5 9.5C9.5 8.11875 10.6188 7 12 7C13.3813 7 14.5 8.11875 14.5 9.5C14.5 10.8813 13.3813 12 12 12C10.6188 12 9.5 10.8813 9.5 9.5ZM12 8.25C12.6875 8.25 13.25 8.8125 13.25 9.5C13.25 10.1875 12.6875 10.75 12 10.75C11.3125 10.75 10.75 10.1875 10.75 9.5C10.75 8.8125 11.3125 8.25 12 8.25Z'/><path fill-rule='evenodd' clip-rule='evenodd' d='M12 13.25C10.3313 13.25 7 14.0875 7 15.75V17H17V15.75C17 14.0875 13.6688 13.25 12 13.25ZM12 14.5C13.6875 14.5 15.625 15.3063 15.75 15.75H8.25C8.39375 15.3 10.3188 14.5 12 14.5Z'/><path fill-rule='evenodd' clip-rule='evenodd' d='M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12ZM20 12C20 16.4183 16.4183 20 12 20C7.58172 20 4 16.4183 4 12C4 7.58172 7.58172 4 12 4C16.4183 4 20 7.58172 20 12Z'/></svg>" alt="JBF logo"/>
+        <img src="devin.png" alt="Ravin Store logo"/>
         <div>
           <h1>Ravin Store</h1>
           <div id="loginState" class="helper">Not logged in</div>
@@ -298,6 +298,11 @@
           <div id="detailCategory" class="pill">Category</div>
         </div>
       </div>
+      <!-- Actions -->
+      <div class="detail-actions">
+        <a id="detailDownloadBtn" class="btn-pill btn-primary" href="#" download>Download</a>
+        <button id="detailShareBtn" class="btn-pill btn-ghost">Share</button>
+      </div>
       <!-- Summary -->
       <div class="detail-summary">
         <div class="summary-item">
@@ -312,10 +317,6 @@
           <strong id="detailVersion">N/A</strong>
           <span>Version</span>
         </div>
-      </div>
-      <!-- Download Action -->
-      <div class="detail-actions">
-        <a id="detailDownloadBtn" class="btn-pill btn-primary" href="#" download>Download</a>
       </div>
       <!-- Description -->
       <h3 class="section-title" style="color:var(--bg)">About this game</h3>
@@ -840,6 +841,27 @@
           }, 1500);
       };
 
+      // Setup share button
+      const shareBtn = document.getElementById('detailShareBtn');
+      shareBtn.onclick = async () => {
+        const shareData = {
+          title: `Download ${game.title} di RaVin Store`,
+          text: `Cek ${game.title} di RaVin Store!`,
+          url: `${window.location.origin}${window.location.pathname}?game=${game.id}`
+        };
+        try {
+          if (navigator.share) {
+            await navigator.share(shareData);
+          } else {
+            await navigator.clipboard.writeText(shareData.url);
+            alert('Tautan berbagi telah disalin ke clipboard!');
+          }
+        } catch (err) {
+          console.error('Share failed:', err);
+          alert('Gagal membagikan. Silakan coba lagi.');
+        }
+      };
+
       // Fetch and render comments
       fetchComments(game.id).then(comments => renderComments(comments));
 
@@ -882,6 +904,18 @@
       const all = await fetchGames();
       window.__ALL_GAMES__ = all; // Cache all games
       await applyFilterAndSearch();
+
+      // Handle deep links
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const gameId = urlParams.get('game');
+        if (gameId) {
+          const gameToOpen = all.find(g => g.id == gameId);
+          if (gameToOpen) {
+            openDetailDialog(gameToOpen);
+          }
+        }
+      } catch(e) { console.error("Error handling deep link:", e); }
     }
 
     // ====== EVENT LISTENERS ======
