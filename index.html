@@ -161,12 +161,15 @@
         </button>
       </div>
     </div>
-    <div class="profile"><img src="devin.png" alt="profile"/></div>
+    <div class="profile"><img src="logo.png" alt="profile"/></div>
   </div>
   
   <!-- Container -->
   <div class="container">
-    <h3 class="section-title">Recommended for you</h3>
+    <h3 class="section-title">Trending Games</h3>
+    <div id="trendingGrid" class="grid" aria-live="polite"></div>
+
+    <h3 class="section-title" style="margin-top: 24px;">Recommended for you</h3>
 
     <div class="controls">
       <button class="pill active" data-cat="all"><svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M10 4H4v6h6V4Zm10 0h-6v6h6V4ZM10 14H4v6h6v-6Zm10 0h-6v6h6v-6Z"/></svg>All</button>
@@ -189,7 +192,7 @@
     <div class="panel">
       <button id="closeDrawerBtn" class="btn-pill btn-ghost" style="position:absolute;top:28px;right:28px;padding:4px 10px;font-size:14px">Close</button>
       <div class="brand">
-        <img src="devin.png" alt="Ravin Store logo"/>
+        <img src="logo.png" alt="Ravin Store logo"/>
         <div>
           <h1>Ravin Store</h1>
           <div id="loginState" class="helper">Not logged in</div>
@@ -209,7 +212,7 @@
           <span>Support Store Creator</span>
           </button>
         <a class="btnx" href="https://youtube.com/@circledevelop?si=Dz7sOT2jXQZKKTV0" target="_blank" rel="noopener noreferrer">
-          <img src="devin.png" alt="BIRA GM"/>
+          <img src="logo.png" alt="BIRA GM"/>
           <span>Support Store Creator</span>
         </a>
       </div>
@@ -648,6 +651,22 @@
       return data.signedUrl;
     }
 
+    function calculateRating(game) {
+      // First, check for pre-calculated values from the DB (if migration was run)
+      if (game.avg_rating !== null && game.avg_rating !== undefined && game.rating_count !== null && game.rating_count !== undefined) {
+        return { avg: game.avg_rating, count: game.rating_count };
+      }
+
+      // If not, calculate from the fetched ratings array
+      if (!game.ratings || game.ratings.length === 0) {
+        return { avg: 0, count: 0 };
+      }
+
+      const total = game.ratings.reduce((acc, r) => acc + r.rating, 0);
+      const avg = total / game.ratings.length;
+      return { avg: avg, count: game.ratings.length };
+    }
+
     function renderStars(rating = 0) {
       const r = Math.round(rating * 2) / 2; // Round to nearest 0.5
       const full = '<span class="star">★</span>'.repeat(Math.floor(r));
@@ -657,12 +676,13 @@
     }
 
     function gameCardTemplate(g, thumbnailUrl) {
+      const ratingInfo = calculateRating(g);
       return `
         <div class="card" data-game-id="${g.id}">
           <img class="thumb" src="${thumbnailUrl}" alt="${g.title}" loading="lazy">
           <h4>${g.title}</h4>
           <div class="meta">${g.category || 'N/A'}</div>
-          <div class="rating-stars">${renderStars(g.avg_rating)}</div>
+          <div class="rating-stars">${renderStars(ratingInfo.avg)}</div>
         </div>`;
     }
 
@@ -798,8 +818,10 @@
       document.getElementById('detailVersion').textContent = game.version || 'N/A';
       document.getElementById('detailSize').textContent = game.size || 'N/A';
       document.getElementById('detailDesc').textContent = game.description || 'No description provided.';
-      document.getElementById('detailRating').innerHTML = game.avg_rating ? `${game.avg_rating.toFixed(1)} ★` : 'N/A';
-      document.getElementById('detailRatingCount').textContent = `${game.rating_count || 0} ratings`;
+
+      const ratingInfo = calculateRating(game);
+      document.getElementById('detailRating').innerHTML = ratingInfo.avg > 0 ? `${ratingInfo.avg.toFixed(1)} ★` : 'N/A';
+      document.getElementById('detailRatingCount').textContent = `${ratingInfo.count} ratings`;
 
       // Show dialog immediately with text content
       gameDetailDlg.showModal();
@@ -873,37 +895,53 @@
     }
 
     async function fetchGames(){
-      const { data, error } = await supabase.from('games').select('*').order('created_at', { ascending:false });
+      const { data, error } = await supabase.from('games').select('*, ratings(rating)').order('created_at', { ascending:false });
       if(error){ console.error(error); return []; }
       return data;
     }
 
-    async function renderGames(list){
+    async function renderGames(list, targetGrid = grid){
       if(!list || list.length===0){
-        grid.innerHTML = '';
-        emptyState.style.display = 'block';
+        targetGrid.innerHTML = '';
+        if (targetGrid === grid) {
+          emptyState.style.display = 'block';
+        }
         return;
       }
-      emptyState.style.display = 'none';
-      grid.innerHTML = `<div class="empty">Loading game images...</div>`;
+      if (targetGrid === grid) {
+        emptyState.style.display = 'none';
+      }
+      targetGrid.innerHTML = `<div class="empty">Loading game images...</div>`;
 
       try {
         const urlPromises = list.map(g => createSignedImageUrl(g.img_url));
         const urls = await Promise.all(urlPromises);
 
-        grid.innerHTML = list.map((g, index) => {
+        targetGrid.innerHTML = list.map((g, index) => {
           return gameCardTemplate(g, urls[index]);
         }).join('');
       } catch (error) {
         console.error("Error loading game images:", error);
-        grid.innerHTML = `<div class="empty">Error loading images. Please try again.</div>`;
+        targetGrid.innerHTML = `<div class="empty">Error loading images. Please try again.</div>`;
       }
+    }
+
+    async function renderTrendingGames(allGames) {
+      const trendingGrid = document.getElementById('trendingGrid');
+      const sortedGames = [...allGames].sort((a, b) => {
+        const countA = a.ratings ? a.ratings.length : 0;
+        const countB = b.ratings ? b.ratings.length : 0;
+        return countB - countA;
+      });
+      const topGames = sortedGames.slice(0, 5);
+      await renderGames(topGames, trendingGrid);
     }
 
     async function loadGames(){
       const all = await fetchGames();
       window.__ALL_GAMES__ = all; // Cache all games
       await applyFilterAndSearch();
+      await renderTrendingGames(all);
 
       // Handle deep links
       try {
@@ -919,7 +957,7 @@
     }
 
     // ====== EVENT LISTENERS ======
-    grid.addEventListener('click', async (e) => {
+    document.querySelector('.container').addEventListener('click', async (e) => {
         const card = e.target.closest('.card');
         if (!card) return;
 
