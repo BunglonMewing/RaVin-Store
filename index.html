@@ -16,7 +16,7 @@
   <meta property="og:url" content="https://ravinstore.pages.dev/">
   <meta property="og:title" content="RaVin Store - Pusat Download Game Android Gratis">
   <meta property="og:description" content="Temukan dan unduh game Android terbaru dan terpopuler secara gratis di RaVin Store.">
-  <meta property="og:image" content="https://ravinstore.netlify.app/logo.png">
+  <meta property="og:image" content="https://ravinstore.netlify.app/icon.png">
   <meta property="og:site_name" content="RaVin Store">
 
   <!-- Twitter -->
@@ -24,7 +24,7 @@
   <meta name="twitter:url" content="https://ravinstore.netlify.app/">
   <meta name="twitter:title" content="RaVin Store - Pusat Download Game Android Gratis">
   <meta name="twitter:description" content="Temukan dan unduh game Android terbaru dan terpopuler secara gratis di RaVin Store.">
-  <meta name="twitter:image" content="https://ravinstore.pages.dev/logo.png">
+  <meta name="twitter:image" content="https://ravinstore.pages.dev/icon.png">
 
   <style>
     :root {
@@ -161,12 +161,12 @@
         </button>
       </div>
     </div>
-    <div class="profile"><img src="logo.png" alt="profile"/></div>
+    <div class="profile"><img src="icon.png" alt="profile"/></div>
   </div>
   
   <!-- Container -->
   <div class="container">
-    <h3 class="section-title">Trending Games</h3>
+    <h3 id="trending" class="section-title">Trending Games</h3>
     <div id="trendingGrid" class="grid" aria-live="polite"></div>
 
     <h3 class="section-title" style="margin-top: 24px;">Recommended for you</h3>
@@ -192,13 +192,17 @@
     <div class="panel">
       <button id="closeDrawerBtn" class="btn-pill btn-ghost" style="position:absolute;top:28px;right:28px;padding:4px 10px;font-size:14px">Close</button>
       <div class="brand">
-        <img src="logo.png" alt="Ravin Store logo"/>
+        <img src="icon.png" alt="Ravin Store logo"/>
         <div>
           <h1>Ravin Store</h1>
           <div id="loginState" class="helper">Not logged in</div>
         </div>
       </div>
       <div class="menu">
+        <a class="btnx" href="#trending" onclick="closeDrawer()">
+          <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'><path d='M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6h-6z'/></svg>" alt="Trending"/>
+          <span>Trending</span>
+        </a>
         <button id="btnUpload" class="btnx">
           <img src="data:image/svg+xml;utf8,<svg viewBox='0 0 128 128' xmlns='http://www.w3.org/2000/svg'><path fill='white' d='M 96.75,22.375 C 87.8,22.24 78.78,27.23 73.31,38.41 L 18.44,62.19 L 18.25,62.25 C 8.64,67.49 4,75.88 3.22,84.47 C 2.44,93.06 5.34,101.86 10.44,108.66 C 15.54,115.45 22.92,120.32 31.25,120.5 C 39.58,120.68 48.46,116.01 56.19,104.91 L 56.28,104.81 C 69.71,97.56 82.78,91.81 101.25,83.88 C 110.96,79.6 123.59,70.86 124.25,44.28 C 120.46,32.73 111,24.6 100.66,22.75 C 99.36,22.52 98.06,22.39 96.75,22.375 z'/><g fill='%23333'><path d='M48,52 h-8 v-8 h-8 v8 h-8 v8 h8 v8 h8 v-8 h8z'/><circle cx='80' cy='52' r='6'/><circle cx='94' cy='45' r='6'/></g></svg>" alt="Upload"/>
           <span>Upload Game (Free)</span>
@@ -208,11 +212,11 @@
           <span id="loginText">Login</span>
         </button>
         <a class="btnx" href="https://youtube.com/@bira_gaming?si=DGz6T4hPHaMqTtZx" target="_blank" rel="noopener noreferrer">
-          <img src="logo.png" alt="BIRA GM"/>
+          <img src="icon.png" alt="BIRA GM"/>
           <span>Support Store Creator</span>
           </button>
         <a class="btnx" href="https://youtube.com/@circledevelop?si=Dz7sOT2jXQZKKTV0" target="_blank" rel="noopener noreferrer">
-          <img src="logo.png" alt="BIRA GM"/>
+          <img src="icon.png" alt="BIRA GM"/>
           <span>Support Store Creator</span>
         </a>
       </div>
@@ -313,6 +317,10 @@
           <span id="detailRatingCount">0 ratings</span>
         </div>
         <div class="summary-item">
+          <strong id="detailDownloads">0</strong>
+          <span>Downloads</span>
+        </div>
+        <div class="summary-item">
           <strong><span id="detailSize">N/A</span></strong>
           <span>Size</span>
         </div>
@@ -346,6 +354,26 @@
     </div>
   </dialog>
 
+  <!-- Profile Dialog -->
+  <dialog id="profileDlg">
+    <div class="dlg-head">
+      <strong>Edit Profile</strong>
+      <button class="btn-pill btn-ghost" onclick="profileDlg.close()">Close</button>
+    </div>
+    <form id="profileForm" class="dlg-body" method="dialog">
+      <div class="row">
+        <label for="nickname">Nickname</label>
+        <input id="nickname" type="text" required placeholder="Your public name"/>
+      </div>
+      <div class="tiny">This will be displayed on your comments.</div>
+      <div class="dlg-actions">
+        <button type="button" id="btnLogout" class="btn-pill btn-ghost" style="margin-right: auto;">Logout</button>
+        <button type="button" class="btn-pill btn-ghost" onclick="profileDlg.close()">Cancel</button>
+        <button type="submit" class="btn-pill btn-primary">Save</button>
+      </div>
+    </form>
+  </dialog>
+
   <!-- Supabase JS -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -372,6 +400,7 @@
     const loginDlg = document.getElementById('loginDlg');
     const uploadDlg = document.getElementById('uploadDlg');
     const gameDetailDlg = document.getElementById('gameDetailDlg');
+    const profileDlg = document.getElementById('profileDlg');
     const grid = document.getElementById('gameGrid');
     const emptyState = document.getElementById('emptyState');
 
@@ -381,22 +410,31 @@
     openDrawerBtn.addEventListener('click', openDrawer);
     closeDrawerBtn.addEventListener('click', closeDrawer);
     backdrop.addEventListener('click', closeDrawer);
-    document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') { closeDrawer(); loginDlg.close(); uploadDlg.close(); gameDetailDlg.close(); } });
+    document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') { closeDrawer(); loginDlg.close(); uploadDlg.close(); gameDetailDlg.close(); profileDlg.close(); } });
 
     // ====== AUTH ======
     let currentUser = null;
+    let userProfile = null;
+
+    async function openProfileEditor() {
+      if (!currentUser) return;
+
+      const { data, error } = await supabase.from('profiles').select('nickname').eq('id', currentUser.id).single();
+      if (data) {
+        userProfile = data;
+        document.getElementById('nickname').value = data.nickname || '';
+      }
+      profileDlg.showModal();
+    }
 
     function renderLoginState(user) {
       currentUser = user;
       if (user) {
         loginStateEl.textContent = `Logged in as ${user.email}`;
         loginText.textContent = 'Account';
-        btnLogin.onclick = async () => {
-          if (confirm('Logout dari akun ini?')) {
-            await supabase.auth.signOut();
-          }
-        };
+        btnLogin.onclick = openProfileEditor;
       } else {
+        userProfile = null;
         loginStateEl.textContent = 'Not logged in';
         loginText.textContent = 'Login';
         btnLogin.onclick = () => loginDlg.showModal();
@@ -414,6 +452,35 @@
     });
 
     // Login/Register sederhana
+    document.getElementById('profileForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const newNickname = document.getElementById('nickname').value.trim();
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+
+      try {
+        const { error } = await supabase.from('profiles').upsert({
+          id: currentUser.id,
+          nickname: newNickname,
+          updated_at: new Date().toISOString()
+        });
+        if (error) throw error;
+        alert('Profile updated successfully!');
+        profileDlg.close();
+      } catch (error) {
+        alert('Error updating profile: ' + error.message);
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+
+    document.getElementById('btnLogout').addEventListener('click', async () => {
+      if (confirm('Are you sure you want to logout?')) {
+        await supabase.auth.signOut();
+        profileDlg.close();
+      }
+    });
+
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const email = document.getElementById('email').value.trim();
@@ -688,7 +755,10 @@
 
     async function fetchComments(gameId) {
         const { data, error } = await supabase.from('comments')
-            .select(`*`)
+            .select(`
+                *,
+                profile:profiles(nickname)
+            `)
             .eq('game_id', gameId)
             .order('created_at', { ascending: false });
         if (error) { console.error('Error fetching comments:', error); return []; }
@@ -701,15 +771,19 @@
             listEl.innerHTML = '<div class="empty">No reviews yet.</div>';
             return;
         }
-        listEl.innerHTML = comments.map(c => `
+        listEl.innerHTML = comments.map(c => {
+          const authorName = c.profile?.nickname || (c.user ? c.user.email.split('@')[0] : 'User');
+          const avatarChar = authorName.charAt(0).toUpperCase();
+          return `
             <div class="comment">
-                <div class="avatar">${c.user ? c.user.email.charAt(0).toUpperCase() : 'U'}</div>
+                <div class="avatar">${avatarChar}</div>
                 <div class="comment-body">
-                    <strong>${c.user ? c.user.email.split('@')[0] : 'User'}</strong>
+                    <strong>${authorName}</strong>
                     <p>${c.content}</p>
                 </div>
             </div>
-        `).join('');
+          `
+        }).join('');
     }
 
     function createRatingForm(gameId, userRating = 0) {
@@ -822,6 +896,7 @@
       const ratingInfo = calculateRating(game);
       document.getElementById('detailRating').innerHTML = ratingInfo.avg > 0 ? `${ratingInfo.avg.toFixed(1)} ★` : 'N/A';
       document.getElementById('detailRatingCount').textContent = `${ratingInfo.count} ratings`;
+      document.getElementById('detailDownloads').textContent = game.download_count || 0;
 
       // Show dialog immediately with text content
       gameDetailDlg.showModal();
@@ -855,6 +930,22 @@
           e.preventDefault();
           downloadBtn.textContent = 'Preparing...';
           downloadBtn.style.pointerEvents = 'none';
+
+          try {
+            // Increment download count in the background
+            const { error } = await supabase.rpc('increment_download_count', { game_id_to_update: game.id });
+            if (error) console.error('Failed to increment download count:', error);
+            else {
+              // Optionally update UI instantly
+              const currentDownloads = parseInt(document.getElementById('detailDownloads').textContent, 10);
+              document.getElementById('detailDownloads').textContent = currentDownloads + 1;
+              const gameInCache = (window.__ALL_GAMES__ || []).find(g => g.id == game.id);
+              if(gameInCache) gameInCache.download_count = (gameInCache.download_count || 0) + 1;
+            }
+          } catch (rpcError) {
+            console.error('RPC error:', rpcError);
+          }
+
           const url = await resolveDownloadUrl(game);
           window.location.href = url;
           setTimeout(() => {
