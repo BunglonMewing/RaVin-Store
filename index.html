@@ -79,11 +79,11 @@
     .backdrop.show { opacity: 1; pointer-events: auto; z-index: 29; }
     .drawer { position: fixed; inset: 0 30% 0 auto; max-width: 520px; width: 92vw; padding: 18px; transform: translateX(-110%); transition: transform .35s ease; z-index: -1; pointer-events: none; }
     .drawer.show { transform: translateX(0); z-index: 30; pointer-events: auto; }
-    .panel { background: #3b3b3b; border-radius: 26px; padding: 18px; box-shadow: var(--shadow); border: 3px solid #000; }
+    .panel { background: #3b3b3b; border-radius: 26px; padding: 18px; box-shadow: var(--shadow); border: 3px solid #000; height: 100%; display: flex; flex-direction: column; }
     .brand { display: flex; gap: 18px; align-items: center; background: #2f2f2f; border-radius: 20px; padding: 16px; border: 3px solid #000; }
     .brand img { width: 72px; height: 72px; border-radius: 16px; }
     .brand h1 { margin: 0; font-weight: 900; letter-spacing: 2px; }
-    .menu { margin-top: 18px; display: flex; flex-direction: column; gap: 16px; }
+    .menu { margin-top: 18px; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; flex-shrink: 1; }
     .menu .btnx { display: flex; align-items: center; gap: 14px; background: #5a5a5a; border-radius: 22px; padding: 18px; border: 3px solid #000; cursor: pointer; text-decoration: none; }
     .menu .btnx img { width: 42px; height: 42px; border-radius: 10px; }
     .menu .btnx span { font-weight: 900; font-size: 22px; color: #fff; text-shadow: 0 2px 0 #000; }
@@ -736,16 +736,35 @@
     window.signedUrlCache = new Map(); // Cache untuk signed URLs
 
     async function createSignedImageUrl(path) {
-      if (!path) return "data:image/svg+xml;utf8,<svg viewBox='0 0 128 128' xmlns='http://www.w3.org/2000/svg'><path fill='currentColor' d='M 96.75,22.375 C 87.8,22.24 78.78,27.23 73.31,38.41 L 18.44,62.19 L 18.25,62.25 C 8.64,67.49 4,75.88 3.22,84.47 C 2.44,93.06 5.34,101.86 10.44,108.66 C 15.54,115.45 22.92,120.32 31.25,120.5 C 39.58,120.68 48.46,116.01 56.19,104.91 L 56.28,104.81 C 69.71,97.56 82.78,91.81 101.25,83.88 C 110.96,79.6 123.59,70.86 124.25,44.28 C 120.46,32.73 111,24.6 100.66,22.75 C 99.36,22.52 98.06,22.39 96.75,22.375 z'/><g fill='white'><path d='M48,52 h-8 v-8 h-8 v8 h-8 v8 h8 v8 h8 v-8 h8z'/><circle cx='80' cy='52' r='6'/><circle cx='94' cy='45' r='6'/></g></svg>"; // Default image
+      const defaultIcon = "game.png"; // A local, reliable default
+      if (!path) return defaultIcon;
 
-      // --- FIX: Switch to getPublicUrl for more robust image loading ---
-      const { data } = supabase.storage.from('apks').getPublicUrl(path);
-      if (data && data.publicUrl) {
-        return data.publicUrl;
+      // Use cache to avoid re-generating URLs for the same path
+      if (window.signedUrlCache.has(path)) {
+        return window.signedUrlCache.get(path);
       }
 
-      // Fallback if public URL fails for some reason
-      return "data:image/svg+xml;utf8,<svg/>";
+      let url = defaultIcon;
+
+      // Respect the global flag for using signed URLs
+      if (USE_SIGNED_URLS) {
+        const { data, error } = await supabase.storage.from('apks').createSignedUrl(path, 3600); // 1-hour expiry
+        if (error) {
+          console.error(`Error creating signed URL for "${path}". It might be a private object in a public bucket or a wrong path. Falling back to public URL.`, error.message);
+          // Fallback attempt
+          const { data: publicUrlData } = supabase.storage.from('apks').getPublicUrl(path);
+          url = publicUrlData ? publicUrlData.publicUrl : defaultIcon;
+        } else {
+          url = data.signedUrl;
+        }
+      } else {
+        // Directly get public URL if signed URLs are disabled
+        const { data: publicUrlData } = supabase.storage.from('apks').getPublicUrl(path);
+        url = publicUrlData ? publicUrlData.publicUrl : defaultIcon;
+      }
+
+      window.signedUrlCache.set(path, url);
+      return url;
     }
 
     async function resolveDownloadUrl(g){
