@@ -56,3 +56,38 @@ USING (auth.uid() = uploaded_by);
 
 -- Pesan akhir: Skrip selesai. Anda sekarang memiliki tabel 'games' yang aman.
 -- Langkah selanjutnya adalah membuat Storage Bucket. Lihat README.md.
+
+-- =================================================================
+-- ADMIN FUNCTION: ADD COINS TO USER
+-- =================================================================
+-- FUNGSI INI HANYA UNTUK ADMIN.
+-- Fungsi ini menggunakan SECURITY DEFINER, artinya akan berjalan dengan hak akses
+-- dari pemilik fungsi (biasanya admin/postgres), bukan pengguna yang memanggilnya.
+-- Ini memungkinkan penambahan koin tanpa perlu service_role key di sisi klien,
+-- namun pastikan RLS pada tabel `profiles` diatur dengan benar dan fungsi ini
+-- tidak terekspos ke publik secara tidak sengaja.
+-- =================================================================
+CREATE OR REPLACE FUNCTION add_coins_to_user(user_email TEXT, amount_to_add INT)
+RETURNS TEXT AS $$
+DECLARE
+  target_user_id UUID;
+BEGIN
+  -- 1. Dapatkan ID pengguna dari email mereka di tabel auth.users
+  SELECT id INTO target_user_id FROM auth.users WHERE email = user_email;
+
+  -- Jika pengguna tidak ditemukan, kembalikan error
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Pengguna dengan email % tidak ditemukan.', user_email;
+  END IF;
+
+  -- 2. Tambahkan koin ke profil pengguna
+  -- Menggunakan `ON CONFLICT` untuk membuat profil jika belum ada, lalu menambahkan koin.
+  INSERT INTO public.profiles (id, coins)
+  VALUES (target_user_id, amount_to_add)
+  ON CONFLICT (id)
+  DO UPDATE SET coins = profiles.coins + amount_to_add;
+
+  -- 3. Kembalikan pesan sukses
+  RETURN 'Sukses! ' || amount_to_add || ' koin telah ditambahkan ke akun ' || user_email;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;

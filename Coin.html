@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - Add Coins</title>
+  <style>
+    :root {
+      --bg: #0e4372; --ink: #ffffff; --card: #103c66;
+      --muted: #cfd6df; --accent: #f2f5f9; --radius: 20px;
+      --shadow: 0 8px 24px rgba(0,0,0,.25);
+    }
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg); color: var(--ink);
+      display: flex; justify-content: center; align-items: center;
+      min-height: 100vh; margin: 0;
+    }
+    .container {
+      background: var(--card);
+      padding: 24px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      width: 90%;
+      max-width: 400px;
+      border: 2px solid #1a5a96;
+    }
+    h1 { text-align: center; margin-top: 0; }
+    .form-group { margin-bottom: 16px; }
+    label { display: block; margin-bottom: 6px; font-weight: 700; }
+    input {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 2px solid var(--bg);
+      outline: none;
+      font-size: 15px;
+      box-sizing: border-box;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      background: var(--accent);
+      color: var(--bg);
+      font-weight: 800;
+      font-size: 16px;
+      cursor: pointer;
+      transition: opacity .2s ease;
+    }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+    .message {
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 10px;
+      text-align: center;
+      font-weight: bold;
+    }
+    .message.success { background: #28a745; color: white; }
+    .message.error { background: #dc3545; color: white; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Coin Adder Tool</h1>
+    <p style="text-align:center; font-size: 14px; opacity: .8; margin-top:-10px; margin-bottom: 20px;">For Admin Use Only</p>
+    <form id="addCoinForm">
+      <div class="form-group">
+        <label for="email">User Email</label>
+        <input type="email" id="email" required placeholder="user@example.com">
+      </div>
+      <div class="form-group">
+        <label for="amount">Amount to Add</label>
+        <input type="number" id="amount" required min="1" placeholder="100">
+      </div>
+      <button type="submit" id="submitBtn">Add Coins</button>
+    </form>
+    <div id="message" class="message" style="display: none;"></div>
+  </div>
+
+  <!-- Supabase JS -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    // Konfigurasi yang sama dengan index.html
+    const SUPABASE_URL = "https://wpoatnvzlvgrpqlkgixp.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indwb2F0bnZ6bHZncnBxbGtnaXhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU4NDM1ODEsImV4cCI6MjA3MTQxOTU4MX0.VoJqq_M0jcdn5rkaL2lzbmf07ohnlzwNyC8mLmqb_4E";
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const addCoinForm = document.getElementById('addCoinForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const messageDiv = document.getElementById('message');
+
+    addCoinForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value.trim();
+      const amount = parseInt(document.getElementById('amount').value, 10);
+
+      if (!email || !amount || amount <= 0) {
+        showMessage('Please fill in all fields correctly.', 'error');
+        return;
+      }
+
+      // Meminta konfirmasi admin sebelum melanjutkan
+      const isAdminConfirmed = confirm(`Are you sure you want to add ${amount} coins to the user ${email}? This action is irreversible.`);
+      if (!isAdminConfirmed) {
+          return; // Menghentikan eksekusi jika admin membatalkan
+      }
+
+
+      setLoading(true);
+
+      try {
+        const { data, error } = await supabase.rpc('add_coins_to_user', {
+          user_email: email,
+          amount_to_add: amount
+        });
+
+        if (error) {
+          throw error;
+        }
+
+        showMessage(data || 'Coins added successfully!', 'success');
+        addCoinForm.reset();
+      } catch (err) {
+        console.error('Error adding coins:', err);
+        showMessage(err.message || 'An unknown error occurred.', 'error');
+      } finally {
+        setLoading(false);
+      }
+    });
+
+    function setLoading(isLoading) {
+      submitBtn.disabled = isLoading;
+      submitBtn.textContent = isLoading ? 'Processing...' : 'Add Coins';
+    }
+
+    function showMessage(text, type) {
+      messageDiv.textContent = text;
+      messageDiv.className = `message ${type}`;
+      messageDiv.style.display = 'block';
+    }
+  </script>
+</body>
+</html>
