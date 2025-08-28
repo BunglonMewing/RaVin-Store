@@ -738,21 +738,14 @@
     async function createSignedImageUrl(path) {
       if (!path) return "data:image/svg+xml;utf8,<svg viewBox='0 0 128 128' xmlns='http://www.w3.org/2000/svg'><path fill='currentColor' d='M 96.75,22.375 C 87.8,22.24 78.78,27.23 73.31,38.41 L 18.44,62.19 L 18.25,62.25 C 8.64,67.49 4,75.88 3.22,84.47 C 2.44,93.06 5.34,101.86 10.44,108.66 C 15.54,115.45 22.92,120.32 31.25,120.5 C 39.58,120.68 48.46,116.01 56.19,104.91 L 56.28,104.81 C 69.71,97.56 82.78,91.81 101.25,83.88 C 110.96,79.6 123.59,70.86 124.25,44.28 C 120.46,32.73 111,24.6 100.66,22.75 C 99.36,22.52 98.06,22.39 96.75,22.375 z'/><g fill='white'><path d='M48,52 h-8 v-8 h-8 v8 h-8 v8 h8 v8 h8 v-8 h8z'/><circle cx='80' cy='52' r='6'/><circle cx='94' cy='45' r='6'/></g></svg>"; // Default image
 
-      const cachedUrl = window.signedUrlCache.get(path);
-      if (cachedUrl) return cachedUrl;
-
-      try {
-        const { data, error } = await supabase.storage.from('apks').createSignedUrl(path, 300); // 5 menit expiry
-        if (error) {
-          console.error(`Error creating signed URL for ${path}:`, error);
-          return "data:image/svg+xml;utf8,<svg/>"; // Placeholder on error
-        }
-        window.signedUrlCache.set(path, data.signedUrl);
-        return data.signedUrl;
-      } catch (err) {
-        console.error(`Exception for ${path}:`, err);
-        return "data:image/svg+xml;utf8,<svg/>"; // Placeholder on error
+      // --- FIX: Switch to getPublicUrl for more robust image loading ---
+      const { data } = supabase.storage.from('apks').getPublicUrl(path);
+      if (data && data.publicUrl) {
+        return data.publicUrl;
       }
+
+      // Fallback if public URL fails for some reason
+      return "data:image/svg+xml;utf8,<svg/>";
     }
 
     async function resolveDownloadUrl(g){
