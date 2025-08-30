@@ -216,6 +216,10 @@
           <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'><path d='M11 17h2v-4h4v-2h-4V7h-2v4H7v2h4v4zm1 5q-2.075 0-3.9-.788t-3.175-2.137q-1.35-1.35-2.137-3.175T2 12q0-2.075.788-3.9t2.137-3.175q1.35-1.35 3.175-2.138T12 2q2.075 0 3.9.788t3.175 2.138q1.35 1.35 2.137 3.175T22 12q0 2.075-.788 3.9t-2.137 3.175q-1.35 1.35-3.175 2.137T12 22z'/></svg>" alt="Top Up"/>
           <span>Top Up Koin</span>
         </button>
+        <button id="btnAbout" class="btnx">
+          <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'><path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z'/></svg>" alt="About"/>
+          <span>Tentang</span>
+        </button>
         <button id="btnLogin" class="btnx">
           <img src="google.png" alt="Login"/>
           <span id="loginText">Login</span>
@@ -412,6 +416,22 @@
     </div>
   </dialog>
 
+  <!-- About Dialog -->
+  <dialog id="aboutDlg">
+    <div class="dlg-head">
+      <strong>Tentang RaVin Store</strong>
+      <button class="btn-pill btn-ghost" onclick="aboutDlg.close()">Close</button>
+    </div>
+    <div class="dlg-body" style="line-height: 1.6;">
+      <h3>RaVin Store Versi 2.0</h3>
+      <p>Selamat datang di RaVin Store, platform komunitas untuk berbagi dan menemukan game-game seru buatan developer independen.</p>
+      <p>Misi kami adalah menyediakan tempat bagi para kreator untuk mempublikasikan karya mereka dan bagi para pemain untuk menemukan game-game baru yang unik.</p>
+      <p style="margin-top: 20px;"><strong>Lisensi</strong></p>
+      <p>Situs web ini dilisensikan di bawah <a href="http://www.apache.org/licenses/LICENSE-2.0" target="_blank" rel="noopener noreferrer">Lisensi Apache 2.0</a>.</p>
+      <p style="margin-top: 20px; font-style: italic; font-size: 14px; color: #4b5b70;">Terima kasih telah menjadi bagian dari komunitas kami!</p>
+    </div>
+  </dialog>
+
   <!-- Supabase JS -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -436,6 +456,7 @@
 
     // ====== UI ELEMENTS ======
     const topupDlg = document.getElementById('topupDlg');
+    const aboutDlg = document.getElementById('aboutDlg');
     const drawer = document.getElementById('drawer');
     const backdrop = document.getElementById('backdrop');
     const openDrawerBtn = document.getElementById('openDrawer');
@@ -518,6 +539,10 @@
     supabase.auth.onAuthStateChange(async (event, session) => {
       const user = session?.user || null;
       await renderLoginState(user);
+      // Always reload games on auth change to apply correct RLS policies
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'INITIAL_SESSION') {
+        loadGames();
+      }
       if (event === 'SIGNED_IN') {
         loginDlg.close();
         uploadDlg.close();
@@ -693,6 +718,11 @@
 
     document.getElementById('btnTopUp').addEventListener('click', () => {
       topupDlg.showModal();
+      closeDrawer();
+    });
+
+    document.getElementById('btnAbout').addEventListener('click', () => {
+      aboutDlg.showModal();
       closeDrawer();
     });
 
@@ -1480,9 +1510,7 @@
     });
 
     // ====== INISIALISASI ======
-    (async function init(){
-      await loadGames();
-    })();
+    // Initial load is handled by onAuthStateChange's INITIAL_SESSION event
   </script>
 </body>
 </html>
