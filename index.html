@@ -784,32 +784,32 @@
       const defaultIcon = "game.png"; // A local, reliable default
       if (!path) return defaultIcon;
 
-      // Use cache to avoid re-generating URLs for the same path
       if (window.signedUrlCache.has(path)) {
         return window.signedUrlCache.get(path);
       }
 
-      let url = defaultIcon;
-
-      // Respect the global flag for using signed URLs
-      if (USE_SIGNED_URLS) {
-        const { data, error } = await supabase.storage.from('apks').createSignedUrl(path, 3600); // 1-hour expiry
-        if (error) {
-          console.error(`Error creating signed URL for "${path}". It might be a private object in a public bucket or a wrong path. Falling back to public URL.`, error.message);
-          // Fallback attempt
-          const { data: publicUrlData } = supabase.storage.from('apks').getPublicUrl(path);
-          url = publicUrlData ? publicUrlData.publicUrl : defaultIcon;
-        } else {
+      try {
+        let url = defaultIcon;
+        if (USE_SIGNED_URLS) {
+          const { data, error } = await supabase.storage.from('apks').createSignedUrl(path, 3600); // 1-hour expiry
+          if (error) {
+            throw new Error(error.message); // Explicitly throw to be caught by the catch block
+          }
           url = data.signedUrl;
+        } else {
+          const { data } = supabase.storage.from('apks').getPublicUrl(path);
+          url = data ? data.publicUrl : defaultIcon;
         }
-      } else {
-        // Directly get public URL if signed URLs are disabled
-        const { data: publicUrlData } = supabase.storage.from('apks').getPublicUrl(path);
-        url = publicUrlData ? publicUrlData.publicUrl : defaultIcon;
+        window.signedUrlCache.set(path, url);
+        return url;
+      } catch (error) {
+        console.error(`Failed to get image URL for "${path}". Falling back to default. Error:`, error.message);
+        // Attempt to get a public URL as a final fallback, otherwise use the local default
+        const { data } = supabase.storage.from('apks').getPublicUrl(path);
+        const fallbackUrl = data ? data.publicUrl : defaultIcon;
+        window.signedUrlCache.set(path, fallbackUrl); // Cache the fallback to prevent retries
+        return fallbackUrl;
       }
-
-      window.signedUrlCache.set(path, url);
-      return url;
     }
 
     async function resolveDownloadUrl(g){
@@ -1125,32 +1125,52 @@
       }
     }
 
-    async function fetchGames(){
-      const { data, error } = await supabase.from('games').select('*, ratings(rating)').order('created_at', { ascending:false });
-      if(error){ console.error(error); return []; }
-      return data;
+    async function fetchGames() {
+      // Explicitly select columns to be safe, and handle potential errors during query.
+      const { data, error } = await supabase
+        .from('games')
+        .select(`
+          id, title, category, description, version, size,
+          apk_path, img_url, uploaded_by, screenshots, price,
+          download_count, avg_rating, rating_count,
+          ratings(rating)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching games:', error.message);
+        // Return empty array on error, so UI can show empty state.
+        return [];
+      }
+      return data || [];
     }
 
-    async function renderGames(list, targetGrid = grid){
-      if(!list || list.length===0){
-        targetGrid.innerHTML = '';
-        if (targetGrid === grid) {
-          emptyState.style.display = 'block';
-        }
-        return;
-      }
+    async function renderGames(list, targetGrid = grid) {
+      // Ensure the empty state message is hidden by default.
       if (targetGrid === grid) {
         emptyState.style.display = 'none';
       }
+      targetGrid.innerHTML = ''; // Always clear the grid first.
+
+      if (!list || list.length === 0) {
+        if (targetGrid === grid) {
+          // If the main grid is being rendered and the list is empty, show the message.
+          emptyState.style.display = 'block';
+        }
+        return; // Stop execution since there's nothing to render.
+      }
+
+      // Optional: Show a loading state while images are being fetched.
       targetGrid.innerHTML = `<div class="empty">Loading game images...</div>`;
 
       try {
-        const urlPromises = list.map(g => createSignedImageUrl(g.img_url));
-        const urls = await Promise.all(urlPromises);
+        const cardPromises = list.map(async (g) => {
+          const thumbnailUrl = await createSignedImageUrl(g.img_url);
+          return gameCardTemplate(g, thumbnailUrl);
+        });
 
-        targetGrid.innerHTML = list.map((g, index) => {
-          return gameCardTemplate(g, urls[index]);
-        }).join('');
+        const cardsHtml = await Promise.all(cardPromises);
+        targetGrid.innerHTML = cardsHtml.join('');
       } catch (error) {
         console.error("Error loading game images:", error);
         targetGrid.innerHTML = `<div class="empty">Error loading images. Please try again.</div>`;
@@ -1168,23 +1188,30 @@
       await renderGames(topGames, trendingGrid);
     }
 
-    async function loadGames(){
-      const all = await fetchGames();
-      window.__ALL_GAMES__ = all; // Cache all games
-      await applyFilterAndSearch();
-      await renderTrendingGames(all);
+    async function loadGames() {
+      // Fetch all games using the robust fetch function.
+      const allGames = await fetchGames();
+      window.__ALL_GAMES__ = allGames; // Cache games for filtering and searching.
 
-      // Handle deep links
+      // Initially, render the games based on the default filter ("All").
+      await applyFilterAndSearch();
+      // Render the trending games section.
+      await renderTrendingGames(allGames);
+
+      // Handle deep links to open a specific game on page load.
       try {
         const urlParams = new URLSearchParams(window.location.search);
-        const gameId = urlParams.get('game');
-        if (gameId) {
-          const gameToOpen = all.find(g => g.id == gameId);
+        const gameIdParam = urlParams.get('game');
+        if (gameIdParam) {
+          const gameToOpen = allGames.find(g => g.id == gameIdParam);
           if (gameToOpen) {
-            openDetailDialog(gameToOpen);
+            // Use a small delay to ensure the UI is fully ready before opening the dialog.
+            setTimeout(() => openDetailDialog(gameToOpen), 100);
           }
         }
-      } catch(e) { console.error("Error handling deep link:", e); }
+      } catch (e) {
+        console.error("Error handling deep link:", e);
+      }
     }
 
     // ====== EVENT LISTENERS ======
