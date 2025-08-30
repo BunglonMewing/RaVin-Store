@@ -79,6 +79,7 @@
     .backdrop.show { opacity: 1; pointer-events: auto; z-index: 29; }
     .drawer { position: fixed; inset: 0 30% 0 auto; max-width: 520px; width: 92vw; padding: 18px; transform: translateX(-110%); transition: transform .35s ease; z-index: -1; pointer-events: none; }
     .drawer.show { transform: translateX(0); z-index: 30; pointer-events: auto; }
+    .drawer.closing { transform: translateX(100vw); }
     .panel { background: #3b3b3b; border-radius: 26px; padding: 18px; box-shadow: var(--shadow); border: 3px solid #000; height: 100%; display: flex; flex-direction: column; }
     .brand { display: flex; gap: 18px; align-items: center; background: #2f2f2f; border-radius: 20px; padding: 16px; border: 3px solid #000; }
     .brand img { width: 72px; height: 72px; border-radius: 16px; }
@@ -264,9 +265,13 @@
       <div class="row"><label for="appName">Nama Game</label><input id="appName" type="text" required placeholder="Contoh: Super Football 23"/></div>
       <div class="row"><label for="apkFile">File Game (APK/ZIP)</label><input id="apkFile" type="file" accept=".apk,.zip,application/vnd.android.package-archive,application/zip" required/></div>
       <div class="row">
-  <label for="iconFile">Icon APK</label>
-  <input id="iconFile" type="file" accept="image/*" required/>
-</div>
+        <label>Icon</label>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <img id="iconPreview" src="game.png" alt="Icon Preview" style="width: 64px; height: 64px; border-radius: 12px; object-fit: cover; background: #eee;">
+            <button type="button" id="scanBtn" class="btn-pill btn-ghost">Scan from APK</button>
+        </div>
+        <div class="tiny">Click "Scan from APK" after selecting a game file.</div>
+      </div>
 <div class="row">
   <label for="screenshotsFile">Screenshots (max 5 images)</label>
   <input id="screenshotsFile" type="file" accept="image/*" multiple/>
@@ -408,6 +413,12 @@
   <!-- Tus JS Client for Resumable Uploads -->
   <script src="https://cdn.jsdelivr.net/npm/tus-js-client@latest/dist/tus.min.js"></script>
 
+  <!-- JSZip for APK processing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+  <!-- Browser-compatible APK manifest parser (unused) -->
+  <script id="binary-xml-parser"></script>
+
   <!-- App Script -->
   <script>
     // ====== KONFIGURASI SUPABASE ======
@@ -415,6 +426,8 @@
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indwb2F0bnZ6bHZncnBxbGtnaXhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU4NDM1ODEsImV4cCI6MjA3MTQxOTU4MX0.VoJqq_M0jcdn5rkaL2lzbmf07ohnlzwNyC8mLmqb_4E";
     const USE_SIGNED_URLS = true; // true = link download pakai signed URL (kedaluwarsa)
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let extractedIconFile = null;
 
     // ====== UI ELEMENTS ======
     const topupDlg = document.getElementById('topupDlg');
@@ -435,7 +448,15 @@
 
     // ====== DRAWER ======
     function openDrawer(){ drawer.classList.add('show'); backdrop.classList.add('show'); drawer.setAttribute('aria-hidden','false'); }
-    function closeDrawer(){ drawer.classList.remove('show'); backdrop.classList.remove('show'); drawer.setAttribute('aria-hidden','true'); }
+    function closeDrawer(){
+      drawer.classList.add('closing');
+      drawer.classList.remove('show');
+      backdrop.classList.remove('show');
+      drawer.setAttribute('aria-hidden','true');
+      setTimeout(() => {
+        drawer.classList.remove('closing');
+      }, 350);
+    }
     openDrawerBtn.addEventListener('click', openDrawer);
     closeDrawerBtn.addEventListener('click', closeDrawer);
     backdrop.addEventListener('click', closeDrawer);
@@ -648,11 +669,11 @@
         const version = document.getElementById('version').value.trim();
         const sizeText = document.getElementById('size').value.trim();
         const gameFile = document.getElementById('apkFile').files[0];
-        const iconFile = document.getElementById('iconFile').files[0];
+        const iconFile = extractedIconFile;
         const screenshotFiles = document.getElementById('screenshotsFile').files;
 
         if (!gameFile || !iconFile) {
-          alert('Harap pilih file game dan file icon.');
+          alert('Harap pilih file game dan scan icon dari APK.');
           return;
         }
         if (screenshotFiles.length > 5) {
@@ -1159,6 +1180,9 @@
     const searchInput = document.getElementById('searchInput');
     const searchBtn = document.getElementById('searchBtn');
     const pills = Array.from(document.querySelectorAll('.pill'));
+    const scanBtn = document.getElementById('scanBtn');
+    const iconPreview = document.getElementById('iconPreview');
+    const apkFileInput = document.getElementById('apkFile');
     let activeCat = 'all';
 
     function filterData(){
@@ -1186,6 +1210,84 @@
         activeCat = p.dataset.cat;
         applyFilterAndSearch();
       });
+    });
+
+    scanBtn.addEventListener('click', async () => {
+      const apkFile = apkFileInput.files[0];
+      if (!apkFile) {
+        alert('Please select an APK file first.');
+        return;
+      }
+
+      scanBtn.disabled = true;
+      scanBtn.textContent = 'Scanning...';
+
+      try {
+        const zip = await JSZip.loadAsync(apkFile);
+
+        const commonIconNames = ['ic_launcher.png', 'ic_launcher_round.png', 'app_icon.png', 'icon.png'];
+        const densityOrder = ['anydpi', 'xxxhdpi', 'xxhdpi', 'xhdpi', 'hdpi', 'mdpi', 'ldpi'];
+
+        let allCandidates = [];
+        zip.forEach((relativePath, file) => {
+          if (!file.dir && (relativePath.startsWith('res/drawable') || relativePath.startsWith('res/mipmap'))) {
+            allCandidates.push(relativePath);
+          }
+        });
+
+        let bestIconPath = null;
+
+        for (const name of commonIconNames) {
+          const nameCandidates = allCandidates.filter(path => path.endsWith('/' + name));
+          if (nameCandidates.length > 0) {
+            for (const density of densityOrder) {
+              const found = nameCandidates.find(path => path.includes(`-${density}`));
+              if (found) {
+                bestIconPath = found;
+                break;
+              }
+            }
+            if (!bestIconPath) {
+              bestIconPath = nameCandidates[0];
+            }
+            break;
+          }
+        }
+
+        if (!bestIconPath) {
+            for (const density of densityOrder) {
+                const found = allCandidates.find(path => path.includes(`-${density}`) && path.endsWith('.png'));
+                if (found) {
+                    bestIconPath = found;
+                    break;
+                }
+            }
+        }
+
+        if (!bestIconPath && allCandidates.length > 0) {
+            bestIconPath = allCandidates.find(path => path.endsWith('.png'));
+        }
+
+        if (!bestIconPath) {
+          throw new Error('Could not find a suitable icon file in the APK.');
+        }
+
+        const iconFile = zip.file(bestIconPath);
+        const iconBlob = await iconFile.async('blob');
+
+        const iconFileExtension = bestIconPath.split('.').pop();
+        extractedIconFile = new File([iconBlob], `icon.${iconFileExtension}`, { type: iconBlob.type });
+
+        iconPreview.src = URL.createObjectURL(iconBlob);
+        alert('Icon scanned successfully!');
+
+      } catch (error) {
+        alert(`Failed to scan icon: ${error.message}`);
+        console.error(error);
+      } finally {
+        scanBtn.disabled = false;
+        scanBtn.textContent = 'Scan from APK';
+      }
     });
 
     // ====== INISIALISASI ======
