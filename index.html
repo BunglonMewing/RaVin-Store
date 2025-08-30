@@ -270,7 +270,12 @@
             <img id="iconPreview" src="game.png" alt="Icon Preview" style="width: 64px; height: 64px; border-radius: 12px; object-fit: cover; background: #eee;">
             <button type="button" id="scanBtn" class="btn-pill btn-ghost">Scan from APK</button>
         </div>
-        <div class="tiny">Click "Scan from APK" after selecting a game file.</div>
+        <div id="scanBtnHelp" class="tiny">Click "Scan from APK" after selecting a game file.</div>
+      </div>
+      <div id="customIconRow" class="row" style="display: none;">
+        <label for="customIconFile">Ikon Kustom (opsional untuk ZIP)</label>
+        <input id="customIconFile" type="file" accept="image/*" />
+        <div class="tiny">Jika tidak ada, ikon default akan digunakan untuk file ZIP.</div>
       </div>
 <div class="row">
   <label for="screenshotsFile">Screenshots (max 5 images)</label>
@@ -669,11 +674,30 @@
         const version = document.getElementById('version').value.trim();
         const sizeText = document.getElementById('size').value.trim();
         const gameFile = document.getElementById('apkFile').files[0];
-        const iconFile = extractedIconFile;
         const screenshotFiles = document.getElementById('screenshotsFile').files;
+        let iconFile;
 
-        if (!gameFile || !iconFile) {
-          alert('Harap pilih file game dan scan icon dari APK.');
+        const isZipFile = gameFile && gameFile.name.toLowerCase().endsWith('.zip');
+
+        if (isZipFile) {
+            const customIcon = document.getElementById('customIconFile').files[0];
+            if (customIcon) {
+                iconFile = customIcon;
+            } else {
+                const response = await fetch(DEFAULT_ZIP_ICON_SVG);
+                const blob = await response.blob();
+                iconFile = new File([blob], 'zip_icon.svg', { type: 'image/svg+xml' });
+            }
+        } else {
+            iconFile = extractedIconFile;
+        }
+
+        if (!gameFile) {
+          alert('Harap pilih file game (APK/ZIP).');
+          return;
+        }
+        if (!iconFile) {
+          alert('Harap scan icon dari APK atau pilih file APK.');
           return;
         }
         if (screenshotFiles.length > 5) {
@@ -690,7 +714,7 @@
         if (iconFile.size > 5 * 1024 * 1024) { alert('Ukuran file icon maksimal adalah 5MB.'); return; }
 
         // Upload icon
-        const iconFileExt = iconFile.name.split('.').pop();
+        const iconFileExt = iconFile.name.split('.').pop() || 'svg';
         const iconFileId = crypto.randomUUID();
         iconPath = `${currentUser.id}/icon_${iconFileId}.${iconFileExt}`;
         await resumableUpload(iconFile, iconPath);
@@ -1224,58 +1248,52 @@
 
       try {
         const zip = await JSZip.loadAsync(apkFile);
-
+        const imageExtensions = ['.png', '.webp', '.jpg', '.jpeg'];
         const commonIconNames = ['ic_launcher.png', 'ic_launcher_round.png', 'app_icon.png', 'icon.png'];
-        const densityOrder = ['anydpi', 'xxxhdpi', 'xxhdpi', 'xhdpi', 'hdpi', 'mdpi', 'ldpi'];
 
-        let allCandidates = [];
+        let imageFiles = [];
         zip.forEach((relativePath, file) => {
-          if (!file.dir && (relativePath.startsWith('res/drawable') || relativePath.startsWith('res/mipmap'))) {
-            allCandidates.push(relativePath);
+          const isImage = imageExtensions.some(ext => relativePath.toLowerCase().endsWith(ext));
+          if (!file.dir && isImage && (relativePath.toLowerCase().startsWith('res/') || relativePath.toLowerCase().includes('mipmap'))) {
+            imageFiles.push(file);
           }
         });
 
-        let bestIconPath = null;
-
-        for (const name of commonIconNames) {
-          const nameCandidates = allCandidates.filter(path => path.endsWith('/' + name));
-          if (nameCandidates.length > 0) {
-            for (const density of densityOrder) {
-              const found = nameCandidates.find(path => path.includes(`-${density}`));
-              if (found) {
-                bestIconPath = found;
-                break;
-              }
-            }
-            if (!bestIconPath) {
-              bestIconPath = nameCandidates[0];
-            }
-            break;
-          }
+        if (imageFiles.length === 0) {
+          throw new Error('No image files found in the APK\'s resource directories.');
         }
 
-        if (!bestIconPath) {
-            for (const density of densityOrder) {
-                const found = allCandidates.find(path => path.includes(`-${density}`) && path.endsWith('.png'));
-                if (found) {
-                    bestIconPath = found;
-                    break;
+        let bestIconFile = null;
+
+        // 1. Prioritize common icon names
+        const commonIcons = imageFiles.filter(file => commonIconNames.some(name => file.name.toLowerCase().endsWith('/' + name)));
+
+        if (commonIcons.length > 0) {
+            // If common icons are found, pick the one with the largest uncompressed size
+            let largestSize = 0;
+            for(const file of commonIcons) {
+                if (file._data.uncompressedSize > largestSize) {
+                    largestSize = file._data.uncompressedSize;
+                    bestIconFile = file;
+                }
+            }
+        } else {
+            // 2. Fallback: find the largest image file overall
+            let largestSize = 0;
+            for(const file of imageFiles) {
+                 if (file._data.uncompressedSize > largestSize) {
+                    largestSize = file._data.uncompressedSize;
+                    bestIconFile = file;
                 }
             }
         }
 
-        if (!bestIconPath && allCandidates.length > 0) {
-            bestIconPath = allCandidates.find(path => path.endsWith('.png'));
-        }
-
-        if (!bestIconPath) {
+        if (!bestIconFile) {
           throw new Error('Could not find a suitable icon file in the APK.');
         }
 
-        const iconFile = zip.file(bestIconPath);
-        const iconBlob = await iconFile.async('blob');
-
-        const iconFileExtension = bestIconPath.split('.').pop();
+        const iconBlob = await bestIconFile.async('blob');
+        const iconFileExtension = bestIconFile.name.split('.').pop();
         extractedIconFile = new File([iconBlob], `icon.${iconFileExtension}`, { type: iconBlob.type });
 
         iconPreview.src = URL.createObjectURL(iconBlob);
@@ -1288,6 +1306,42 @@
         scanBtn.disabled = false;
         scanBtn.textContent = 'Scan from APK';
       }
+    });
+
+    const DEFAULT_ZIP_ICON_SVG = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64"><rect x="8" y="4" width="48" height="56" rx="8" ry="8" fill="%23a0aec0"/><path d="M20,4 L20,22 L44,22 L44,4z" fill="%23718096"/><rect x="20" y="4" width="4" height="18" fill="%23a0aec0"/><text x="32" y="46" font-family="sans-serif" font-size="18" fill="white" font-weight="bold" text-anchor="middle">ZIP</text></svg>`;
+    const customIconRow = document.getElementById('customIconRow');
+    const customIconFileInput = document.getElementById('customIconFile');
+    const scanBtnHelp = document.getElementById('scanBtnHelp');
+
+    apkFileInput.addEventListener('change', () => {
+        const file = apkFileInput.files[0];
+        if (!file) return;
+
+        if (file.name.toLowerCase().endsWith('.zip')) {
+            scanBtn.style.display = 'none';
+            scanBtnHelp.style.display = 'none';
+            customIconRow.style.display = 'block';
+            iconPreview.src = DEFAULT_ZIP_ICON_SVG;
+            extractedIconFile = null; // Clear any previously scanned icon
+        } else { // Assuming .apk or other allowed types
+            scanBtn.style.display = 'block';
+            scanBtnHelp.style.display = 'block';
+            customIconRow.style.display = 'none';
+            iconPreview.src = 'game.png'; // Reset to default placeholder
+            customIconFileInput.value = ''; // Clear custom icon input
+        }
+    });
+
+    customIconFileInput.addEventListener('change', () => {
+        const file = customIconFileInput.files[0];
+        if (file) {
+            iconPreview.src = URL.createObjectURL(file);
+        } else {
+            // If user cancels file selection, revert to default zip icon
+            if(apkFileInput.files[0] && apkFileInput.files[0].name.toLowerCase().endsWith('.zip')) {
+                iconPreview.src = DEFAULT_ZIP_ICON_SVG;
+            }
+        }
     });
 
     // ====== INISIALISASI ======
