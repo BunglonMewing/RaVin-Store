@@ -669,54 +669,107 @@
       }
     });
 
-    // ====== RESUMABLE UPLOAD HELPER ======
-    async function resumableUpload(file, path, onProgress) {
-      const { data: { session } } = await supabase.auth.getSession();
-      // Extract project ID from SUPABASE_URL
-      const projectId = new URL(SUPABASE_URL).hostname.split('.')[0];
+    // ====== RESUMABLE UPLOAD HELPER (REFACTORED) ======
+    function resumableUpload(file, path, { onProgress, onComplete, onError }) {
+        let upload = null;
 
-      return new Promise((resolve, reject) => {
-        const upload = new tus.Upload(file, {
-          endpoint: `${SUPABASE_URL}/storage/v1/upload/resumable`,
-          retryDelays: [0, 3000, 5000, 10000, 20000],
-          headers: {
-            authorization: `Bearer ${session.access_token}`,
-            'x-upsert': 'true', // Overwrite existing file
-          },
-          uploadDataDuringCreation: true,
-          removeFingerprintOnSuccess: true,
-          metadata: {
-            bucketName: 'apks',
-            objectName: path,
-            contentType: file.type,
-            // cacheControl: 3600 // Optional: set cache control
-          },
-          chunkSize: 6 * 1024 * 1024, // Must be 6MB for Supabase
-          onError: (error) => {
-            console.error('TUS Error:', error);
-            reject(new Error('TUS upload failed: ' + error));
-          },
-          onProgress: (bytesUploaded, bytesTotal) => {
-            if (onProgress) {
-              const percentage = ((bytesUploaded / bytesTotal) * 100).toFixed(2);
-              onProgress(bytesUploaded, bytesTotal, percentage);
+        const start = async () => {
+            const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+            if (sessionError) {
+                onError(new Error("Could not get user session: " + sessionError.message));
+                return;
             }
-          },
-          onSuccess: () => {
-            console.log(`Upload successful for ${path}`);
-            resolve();
-          },
-        });
+            if (!session) {
+                onError(new Error("User is not authenticated. Please log in."));
+                return;
+            }
 
-        // Check if there are any previous uploads to continue.
-        upload.findPreviousUploads().then((previousUploads) => {
-          if (previousUploads.length) {
-            upload.resumeFromPreviousUpload(previousUploads[0]);
-          }
-          // Start the upload
-          upload.start();
-        });
-      });
+            upload = new tus.Upload(file, {
+                endpoint: `${SUPABASE_URL}/storage/v1/upload/resumable`,
+                retryDelays: [0, 3000, 5000, 10000, 20000],
+                headers: {
+                    'apikey': SUPABASE_ANON_KEY,
+                    'x-upsert': 'true', // Overwrite existing file
+                },
+                metadata: {
+                    bucketName: 'apks',
+                    objectName: path,
+                    contentType: file.type,
+                    cacheControl: 3600
+                },
+                chunkSize: 6 * 1024 * 1024, // 6MB is required by Supabase
+                removeFingerprintOnSuccess: true,
+
+                // This function is called before each request, ensuring the token is always fresh.
+                onBeforeRequest: async (req) => {
+                    const { data: { session } } = await supabase.auth.getSession();
+                    if (session?.access_token) {
+                        req.setHeader('Authorization', `Bearer ${session.access_token}`);
+                    }
+                },
+
+                onProgress: (bytesUploaded, bytesTotal) => {
+                    if (onProgress) {
+                        const percentage = (bytesUploaded / bytesTotal * 100).toFixed(2);
+                        onProgress(bytesUploaded, bytesTotal, percentage);
+                    }
+                },
+
+                onSuccess: () => {
+                    console.log(`Upload successful for ${path}`);
+                    if (onComplete) {
+                        onComplete();
+                    }
+                },
+
+                onError: (error) => {
+                    console.error('TUS Error:', error);
+                    let detailedError = "An unknown upload error occurred.";
+
+                    // Check if this is a detailed error from Supabase Storage
+                    const originalResponse = error.originalResponse;
+                    if (originalResponse) {
+                        const status = originalResponse.getStatus();
+                        const body = originalResponse.getBody();
+                        try {
+                            const parsedBody = JSON.parse(body);
+                            detailedError = `Upload Failed: ${parsedBody.message || body} (Status: ${status})`;
+                        } catch (e) {
+                            detailedError = `Upload Failed: ${body} (Status: ${status})`;
+                        }
+                    } else if (error.message) {
+                        detailedError = `Upload Failed: ${error.message}`;
+                    }
+
+                    if (onError) {
+                        onError(new Error(detailedError));
+                    }
+                }
+            });
+
+            // Start the upload
+            try {
+                const previousUploads = await upload.findPreviousUploads();
+                if (previousUploads.length) {
+                    upload.resumeFromPreviousUpload(previousUploads[0]);
+                }
+                upload.start();
+            } catch (e) {
+                if (onError) {
+                    onError(new Error("Failed to start or resume upload: " + e.message));
+                }
+            }
+        };
+
+        start();
+
+        return {
+            abort: () => {
+                if (upload) {
+                    upload.abort();
+                }
+            }
+        };
     }
 
     // ====== UPLOAD APK ======
@@ -908,15 +961,26 @@
 
         for (const fileItem of filesToUpload) {
           submitBtn.textContent = `Mengunggah ${fileItem.type}...`;
-          await resumableUpload(fileItem.file, fileItem.path, (bytesUploaded, bytesTotal) => {
-            const currentFileProgress = bytesUploaded;
-            const overallUploaded = totalUploaded + currentFileProgress;
-            const percentage = totalSize > 0 ? (overallUploaded / totalSize) * 100 : 0;
 
-            progressBar.value = percentage;
-            progressText.textContent = `Total: ${(overallUploaded / 1024 / 1024).toFixed(2)} MB / ${(totalSize / 1024 / 1024).toFixed(2)} MB (${percentage.toFixed(2)}%)`;
+          await new Promise((resolve, reject) => {
+            resumableUpload(fileItem.file, fileItem.path, {
+              onProgress: (bytesUploaded, bytesTotal) => {
+                const currentFileProgress = bytesUploaded;
+                const overallUploaded = totalUploaded + currentFileProgress;
+                const percentage = totalSize > 0 ? (overallUploaded / totalSize) * 100 : 0;
+
+                progressBar.value = percentage;
+                progressText.textContent = `Total: ${(overallUploaded / 1024 / 1024).toFixed(2)} MB / ${(totalSize / 1024 / 1024).toFixed(2)} MB (${percentage.toFixed(2)}%)`;
+              },
+              onComplete: () => {
+                totalUploaded += fileItem.file.size;
+                resolve();
+              },
+              onError: (error) => {
+                reject(error);
+              }
+            });
           });
-          totalUploaded += fileItem.file.size;
         }
 
         submitBtn.textContent = 'Menyimpan data...';
